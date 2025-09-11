@@ -17,6 +17,7 @@ import threading
 import queue
 import warnings
 warnings.filterwarnings('ignore')
+from skyfield.api import utc
 
 from true_ekf_tracker import TrueEKFTracker
 from satellite_data import SatelliteDataManager
@@ -62,7 +63,7 @@ def initialize_tracker():
 
 def tracking_worker(tracker, duration_minutes, update_interval, data_queue):
     """Background tracking worker"""
-    start_time = datetime.utcnow()
+    start_time = datetime.now(utc)
     end_time = start_time + timedelta(minutes=duration_minutes)
     
     current_time = start_time
@@ -77,7 +78,7 @@ def tracking_worker(tracker, duration_minutes, update_interval, data_queue):
         
         # Wait for next update
         time.sleep(update_interval)
-        current_time = datetime.utcnow()
+        current_time = datetime.now(utc)
     
     # Signal completion
     data_queue.put(None)

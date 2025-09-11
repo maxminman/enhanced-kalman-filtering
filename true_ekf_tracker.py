@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import json
 import warnings
 warnings.filterwarnings('ignore')
+from skyfield.api import utc
 
 from orbital_mechanics import OrbitalMechanics
 from coordinate_transforms import CoordinateTransforms
@@ -51,7 +52,7 @@ class TrueEKFTracker:
     def initialize_ekf(self, initial_time=None):
         """Initialize EKF with SGP4 state as starting point"""
         if initial_time is None:
-            initial_time = datetime.utcnow()
+            initial_time = datetime.now(utc)
         
         # Get initial state from SGP4
         sgp4_state = self.sat_manager.get_sgp4_state_at_time(initial_time)

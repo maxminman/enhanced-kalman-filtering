@@ -12,6 +12,7 @@ import os
 from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
+from skyfield.api import utc
 
 
 class NASAOEMValidator:
@@ -203,7 +204,9 @@ class NASAOEMValidator:
             velocities = []
             
             while current <= end_time:
-                t = ts.from_datetime(current.replace(tzinfo=None))
+                if current.tzinfo is None:
+                    current = current.replace(tzinfo=utc)
+                t = ts.from_datetime(current)
                 geocentric = satellite.at(t)
                 
                 timestamps.append(current)

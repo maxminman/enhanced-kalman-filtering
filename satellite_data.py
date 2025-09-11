@@ -9,7 +9,7 @@ import json
 import requests
 import numpy as np
 from datetime import datetime, timedelta
-from skyfield.api import load, EarthSatellite, wgs84
+from skyfield.api import load, EarthSatellite, wgs84, utc
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -99,7 +99,10 @@ class SatelliteDataManager:
         
         # Convert to Skyfield time
         if isinstance(timestamp, datetime):
-            t = self.ts.from_datetime(timestamp.replace(tzinfo=None))
+            # Ensure datetime has UTC timezone
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=utc)
+            t = self.ts.from_datetime(timestamp)
         else:
             t = timestamp
         
@@ -200,7 +203,9 @@ class SatelliteDataManager:
             state = self.get_sgp4_state_at_time(current_time)
             if state:
                 # Convert to lat/lon using Skyfield
-                t = self.ts.from_datetime(current_time.replace(tzinfo=None))
+                if current_time.tzinfo is None:
+                    current_time = current_time.replace(tzinfo=utc)
+                t = self.ts.from_datetime(current_time)
                 geocentric = self.satellite.at(t)
                 subpoint = wgs84.subpoint_of(geocentric)
                 
