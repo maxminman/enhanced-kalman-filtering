@@ -66,8 +66,13 @@ class TrueEKFTracker:
         
         # Initialize covariance based on SGP4 uncertainty estimates
         noise_params = self.sat_manager.estimate_measurement_noise()
-        pos_uncertainty = noise_params['position_noise_km']
-        vel_uncertainty = noise_params['velocity_noise_km_s']
+        if not noise_params:
+            # Fallback defaults
+            pos_uncertainty = 0.5  # 500m
+            vel_uncertainty = 0.001  # 1mm/s
+        else:
+            pos_uncertainty = noise_params['position_noise_km']
+            vel_uncertainty = noise_params['velocity_noise_km_s']
         
         # Initial covariance (conservative)
         self.covariance = np.diag([
@@ -142,8 +147,13 @@ class TrueEKFTracker:
         
         # Measurement noise based on SGP4 uncertainty
         noise_params = self.sat_manager.estimate_measurement_noise()
-        pos_noise = noise_params['position_noise_km']
-        vel_noise = noise_params['velocity_noise_km_s']
+        if not noise_params:
+            # Fallback defaults
+            pos_noise = 0.5  # 500m
+            vel_noise = 0.001  # 1mm/s
+        else:
+            pos_noise = noise_params['position_noise_km']
+            vel_noise = noise_params['velocity_noise_km_s']
         
         R = np.diag([
             pos_noise**2, pos_noise**2, pos_noise**2,
@@ -255,12 +265,16 @@ class TrueEKFTracker:
         uncertainty_km = self.get_position_uncertainty()
         
         # Validate against OEM if available
-        oem_validation = self.validator.validate_prediction(
-            self.state[:3], current_time
-        )
+        oem_validation = None
+        if self.state is not None:
+            oem_validation = self.validator.validate_prediction(
+                self.state[:3], current_time
+            )
         
         # Calculate accuracy vs SGP4
-        pos_diff = np.linalg.norm(self.state[:3] - sgp4_state['position_km'])
+        pos_diff = 0
+        if self.state is not None:
+            pos_diff = np.linalg.norm(self.state[:3] - sgp4_state['position_km'])
         
         # Update statistics
         self.stats['ekf_accuracy_history'].append(uncertainty_km * 1000)  # meters

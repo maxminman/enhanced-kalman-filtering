@@ -9,7 +9,7 @@ import json
 import requests
 import numpy as np
 from datetime import datetime, timedelta
-from skyfield.api import load, EarthSatellite
+from skyfield.api import load, EarthSatellite, wgs84
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -114,7 +114,7 @@ class SatelliteDataManager:
     
     def get_orbital_elements(self, timestamp=None):
         """Extract orbital elements from TLE"""
-        if not self.satellite:
+        if not self.satellite or not self.satellite_data:
             return None
         
         # Parse TLE line 2 for orbital elements
@@ -202,7 +202,7 @@ class SatelliteDataManager:
                 # Convert to lat/lon using Skyfield
                 t = self.ts.from_datetime(current_time.replace(tzinfo=None))
                 geocentric = self.satellite.at(t)
-                subpoint = geocentric.subpoint()
+                subpoint = wgs84.subpoint_of(geocentric)
                 
                 ground_track.append({
                     'timestamp': current_time,
