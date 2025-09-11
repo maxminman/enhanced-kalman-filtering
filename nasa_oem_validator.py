@@ -193,28 +193,59 @@ class NASAOEMValidator:
             return False
     
     def validate_prediction(self, ekf_position, timestamp, tolerance_km=1.0):
-        """Validate EKF prediction against OEM data"""
-        if not self.oem_timestamps:
+        """Validate EKF prediction against OEM data with timestamp interpolation"""
+        if not self.oem_timestamps or len(self.oem_timestamps) < 2:
             return None
         
-        # Find closest OEM timestamp
-        time_diffs = [abs((t - timestamp).total_seconds()) for t in self.oem_timestamps]
-        closest_idx = np.argmin(time_diffs)
+        # Find bracketing OEM timestamps for interpolation
+        time_diffs = [(t - timestamp).total_seconds() for t in self.oem_timestamps]
         
-        if time_diffs[closest_idx] > 300:  # More than 5 minutes difference
-            return None
+        # Find surrounding points for interpolation
+        past_indices = [i for i, td in enumerate(time_diffs) if td <= 0]
+        future_indices = [i for i, td in enumerate(time_diffs) if td > 0]
         
-        # Calculate error
-        oem_pos = self.oem_positions[closest_idx]
+        if not past_indices or not future_indices:
+            # Fallback to closest point if we can't bracket
+            abs_diffs = [abs(td) for td in time_diffs]
+            closest_idx = np.argmin(abs_diffs)
+            if abs_diffs[closest_idx] > 60:  # Must be within 1 minute
+                return None
+            oem_pos = self.oem_positions[closest_idx]
+            time_error = abs_diffs[closest_idx]
+        else:
+            # Get closest bracketing points
+            t0_idx = max(past_indices)  # Latest past point
+            t1_idx = min(future_indices)  # Earliest future point
+            
+            t0 = self.oem_timestamps[t0_idx]
+            t1 = self.oem_timestamps[t1_idx]
+            
+            # Check if bracket is reasonable (within 10 minutes)
+            if (t1 - t0).total_seconds() > 600:
+                return None
+            
+            # Linear interpolation
+            dt_total = (t1 - t0).total_seconds()
+            dt_target = (timestamp - t0).total_seconds()
+            alpha = dt_target / dt_total
+            
+            pos0 = self.oem_positions[t0_idx]
+            pos1 = self.oem_positions[t1_idx]
+            
+            # Interpolate position
+            oem_pos = pos0 + alpha * (pos1 - pos0)
+            time_error = 0.0  # Exact interpolation
+        
+        # Both EKF position and OEM position are in ECI/J2000 km - direct comparison
         position_error = np.linalg.norm(ekf_position - oem_pos)
         
         return {
             'error_km': position_error,
             'error_m': position_error * 1000,
             'oem_position': oem_pos,
-            'time_diff_sec': time_diffs[closest_idx],
+            'time_diff_sec': time_error,
             'within_tolerance': position_error <= tolerance_km,
-            'closest_timestamp': self.oem_timestamps[closest_idx]
+            'interpolated': time_error == 0.0
         }
     
     def get_validation_statistics(self, ekf_positions, ekf_timestamps):

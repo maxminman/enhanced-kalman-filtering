@@ -60,8 +60,8 @@ class CoordinateTransforms:
         sin_gmst = np.sin(gmst)
         
         R = np.array([
-            [cos_gmst, sin_gmst, 0],
-            [-sin_gmst, cos_gmst, 0],
+            [cos_gmst, -sin_gmst, 0],
+            [sin_gmst, cos_gmst, 0],
             [0, 0, 1]
         ])
         
@@ -87,8 +87,8 @@ class CoordinateTransforms:
         sin_gmst = np.sin(gmst)
         
         R = np.array([
-            [cos_gmst, -sin_gmst, 0],
-            [sin_gmst, cos_gmst, 0],
+            [cos_gmst, sin_gmst, 0],
+            [-sin_gmst, cos_gmst, 0],
             [0, 0, 1]
         ])
         

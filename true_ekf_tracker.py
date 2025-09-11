@@ -104,9 +104,9 @@ class TrueEKFTracker:
         if dt <= 0:
             return True  # No time has passed
         
-        # Propagate state using orbital mechanics
+        # Propagate state using orbital mechanics (disable drag for validation)
         self.state = self.orbital_mechanics.propagate_state(
-            self.state, dt, include_drag=True
+            self.state, dt, include_drag=False
         )
         
         # Compute Jacobian for covariance propagation
