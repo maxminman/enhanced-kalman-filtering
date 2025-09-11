@@ -68,4 +68,57 @@ The application uses Python threading for concurrent tracking operations, with a
 - **TLE Format**: Standard orbital element format from NORAD/Space Force
 - **OEM Format**: NASA Orbital Ephemeris Message standard for validation
 
-The system is designed to operate independently with fallback mechanisms when external APIs are unavailable, using synthetic validation data based on SGP4 calculations when NASA OEM data cannot be retrieved.
+
+
+Running the EKF Satellite Tracker Locally
+Here's how to run this project on your local machine:
+
+1. Download the Project Files
+You'll need these files from your project:
+
+📁 Project Files:
+├── app.py                    # Main Streamlit application
+├── true_ekf_tracker.py       # Core EKF implementation
+├── orbital_mechanics.py      # Orbital physics engine  
+├── coordinate_transforms.py  # ECI/ECEF/Geodetic conversions
+├── nasa_oem_validator.py     # NASA data validation
+├── satellite_data.py         # TLE and SGP4 handling
+├── ISS_OEM_J2K.txt          # NASA ISS ephemeris data (5,405 points)
+├── selected_satellite.json  # ISS configuration
+└── pyproject.toml           # Dependencies
+2. Set Up Python Environment
+# Create virtual environment
+python -m venv satellite_tracker
+cd satellite_tracker
+# Activate environment
+# On Windows:
+Scripts\activate
+# On Mac/Linux:
+source bin/activate
+# Install dependencies
+pip install streamlit numpy pandas plotly scipy skyfield requests
+3. Create Directory Structure
+mkdir satellite_tracker
+cd satellite_tracker
+# Copy all the files here
+4. Run the Application
+# Start the Streamlit server
+streamlit run app.py --server.port 8501
+5. Access the Dashboard
+Open your browser and go to: http://localhost:8501
+
+📋 Complete Dependencies List:
+Based on your project, you need:
+
+pip install streamlit==1.28.0
+pip install numpy==1.24.3
+pip install pandas==2.0.3
+pip install plotly==5.15.0
+pip install scipy==1.11.1
+pip install skyfield==1.46
+pip install requests==2.31.0
+🛰️ What You'll Get:
+Same accuracy validation against NASA OEM data
+Real-time EKF tracking with sub-kilometer precision
+Interactive dashboard with trajectory maps
+Full orbital mechanics implementationThe system is designed to operate independently with fallback mechanisms when external APIs are unavailable, using synthetic validation data based on SGP4 calculations when NASA OEM data cannot be retrieved.
