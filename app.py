@@ -65,23 +65,37 @@ def initialize_tracker():
 
 def tracking_worker(tracker, duration_minutes, update_interval, data_queue, stop_flag):
     """Background tracking worker"""
+    print(f"🚀 Starting tracking worker for {duration_minutes} minutes")
     start_time = datetime.now(utc)
     end_time = start_time + timedelta(minutes=duration_minutes)
     
     current_time = start_time
+    step_count = 0
     
     while current_time < end_time and stop_flag['running']:
-        # Perform tracking step
-        result = tracker.track_step(current_time)
-        
-        if result:
-            # Put result in queue for main thread
-            data_queue.put(result)
+        try:
+            # Perform tracking step
+            print(f"📍 Tracking step {step_count + 1} at {current_time}")
+            result = tracker.track_step(current_time)
+            
+            if result:
+                print(f"✅ Got tracking result: OEM validation = {result.get('oem_validation', 'None')}")
+                # Put result in queue for main thread
+                data_queue.put(result)
+                step_count += 1
+            else:
+                print(f"⚠️ No result from track_step at {current_time}")
+            
+        except Exception as e:
+            print(f"❌ Error in tracking step: {e}")
+            import traceback
+            traceback.print_exc()
         
         # Wait for next update
         time.sleep(update_interval)
         current_time = datetime.now(utc)
     
+    print(f"🏁 Tracking completed. Processed {step_count} steps.")
     # Signal completion
     data_queue.put(None)
 
