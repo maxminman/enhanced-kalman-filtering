@@ -122,3 +122,10 @@ Same accuracy validation against NASA OEM data
 Real-time EKF tracking with sub-kilometer precision
 Interactive dashboard with trajectory maps
 Full orbital mechanics implementationThe system is designed to operate independently with fallback mechanisms when external APIs are unavailable, using synthetic validation data based on SGP4 calculations when NASA OEM data cannot be retrieved.
+
+## Validation Results
+
+The tracker was validated against NASA OEM data for the ISS.  
+Best accuracy achieved: **1.18 km**   
+Typical accuracy range: **1–60 km**, depending on orbital phase.
+<img width="1318" height="737" alt="image" src="https://github.com/user-attachments/assets/eb6cb6d9-9ac5-4101-834e-96edcda6069d" />
