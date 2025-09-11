@@ -37,57 +37,20 @@ class NASAOEMValidator:
         }
     
     def fetch_oem_data(self, norad_id, start_time, end_time, step_size="1m"):
-        """Fetch OEM data from NASA Horizons API"""
+        """Load OEM data from NASA ISS OEM file"""
         
-        # Check if we have the satellite ID mapping
-        if norad_id not in self.satellite_ids:
-            print(f"⚠️ NORAD ID {norad_id} not available in NASA Horizons database")
-            print("📝 Using synthetic validation data based on SGP4")
-            return self._generate_synthetic_oem(norad_id, start_time, end_time)
-        
-        horizons_id = self.satellite_ids[norad_id]
-        
-        try:
-            # Format times for Horizons
-            start_str = start_time.strftime("%Y-%m-%d %H:%M")
-            end_str = end_time.strftime("%Y-%m-%d %H:%M")
-            
-            # Horizons API parameters
-            params = {
-                'format': 'json',
-                'COMMAND': horizons_id,
-                'CENTER': '500@399',  # Geocentric
-                'START_TIME': start_str,
-                'STOP_TIME': end_str,
-                'STEP_SIZE': step_size,
-                'TABLE_TYPE': 'VECTORS',
-                'REF_SYSTEM': 'J2000',
-                'REF_PLANE': 'FRAME',
-                'VEC_CORR': 'NONE',
-                'OUT_UNITS': 'KM-S',
-                'VEC_TABLE': '2',
-                'CSV_FORMAT': 'YES'
-            }
-            
-            print(f"🌐 Fetching OEM data from NASA Horizons for NORAD {norad_id}...")
-            
-            response = requests.get(self.horizons_url, params=params, timeout=30)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                if 'result' in data:
-                    return self._parse_horizons_data(data['result'])
-                else:
-                    print("❌ No result data in Horizons response")
-                    return self._generate_synthetic_oem(norad_id, start_time, end_time)
-            else:
-                print(f"❌ Horizons API error: {response.status_code}")
+        # Check if we have the local OEM file for ISS
+        if norad_id == 25544:  # ISS
+            try:
+                print(f"📡 Loading NASA ISS OEM data from official ephemeris file...")
+                return self._load_nasa_iss_oem_file()
+            except Exception as e:
+                print(f"⚠️ Error loading NASA OEM file: {e}")
+                print("📝 Using synthetic validation data")
                 return self._generate_synthetic_oem(norad_id, start_time, end_time)
-                
-        except Exception as e:
-            print(f"⚠️ Error fetching OEM data: {e}")
-            print("📝 Using synthetic validation data")
+        else:
+            print(f"⚠️ NORAD ID {norad_id} - only ISS (25544) has real NASA OEM data")
+            print("📝 Using synthetic validation data based on SGP4")
             return self._generate_synthetic_oem(norad_id, start_time, end_time)
     
     def _parse_horizons_data(self, result_text):
@@ -287,3 +250,60 @@ class NASAOEMValidator:
             'sub_500m_rate': np.sum(errors < 0.5) / len(errors) * 100 if len(errors) > 0 else 0,
             'sub_100m_rate': np.sum(errors < 0.1) / len(errors) * 100 if len(errors) > 0 else 0
         }
+    
+    def _load_nasa_iss_oem_file(self):
+        """Load NASA ISS OEM file"""
+        try:
+            with open('ISS_OEM_J2K.txt', 'r') as f:
+                lines = f.readlines()
+            
+            timestamps = []
+            positions = []
+            velocities = []
+            
+            for line in lines:
+                line = line.strip()
+                # Skip comments and metadata
+                if line.startswith('COMMENT') or line.startswith('CCSDS') or line.startswith('CREATION_DATE') or \
+                   line.startswith('ORIGINATOR') or line.startswith('META_') or line.startswith('OBJECT_') or \
+                   line.startswith('CENTER_') or line.startswith('REF_') or line.startswith('TIME_') or \
+                   line.startswith('START_') or line.startswith('USEABLE_') or line.startswith('STOP_') or \
+                   not line or '=' in line:
+                    continue
+                
+                # Parse data lines: timestamp x y z vx vy vz
+                parts = line.split()
+                if len(parts) >= 7:
+                    try:
+                        # Parse timestamp
+                        timestamp_str = parts[0]
+                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                        if timestamp.tzinfo is None:
+                            timestamp = timestamp.replace(tzinfo=utc)
+                        
+                        # Parse position (km) and velocity (km/s)  
+                        x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
+                        vx, vy, vz = float(parts[4]), float(parts[5]), float(parts[6])
+                        
+                        timestamps.append(timestamp)
+                        positions.append(np.array([x, y, z]))
+                        velocities.append(np.array([vx, vy, vz]))
+                        
+                    except (ValueError, IndexError) as e:
+                        print(f"⚠️ Skipping invalid OEM line: {line[:50]}... Error: {e}")
+                        continue
+            
+            self.oem_timestamps = timestamps
+            self.oem_positions = positions
+            self.oem_velocities = velocities
+            
+            print(f"✅ Loaded {len(timestamps)} NASA ISS OEM data points")
+            print(f"📅 Coverage: {timestamps[0]} to {timestamps[-1]}")
+            return True
+            
+        except FileNotFoundError:
+            print("❌ ISS_OEM_J2K.txt not found")
+            return False
+        except Exception as e:
+            print(f"❌ Error parsing NASA OEM file: {e}")
+            return False
