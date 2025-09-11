@@ -42,6 +42,8 @@ if 'tracking_thread' not in st.session_state:
     st.session_state.tracking_thread = None
 if 'data_queue' not in st.session_state:
     st.session_state.data_queue = queue.Queue()
+if 'stop_flag' not in st.session_state:
+    st.session_state.stop_flag = {'running': False}
 
 
 def load_satellite_info():
@@ -61,14 +63,14 @@ def initialize_tracker():
     return True
 
 
-def tracking_worker(tracker, duration_minutes, update_interval, data_queue):
+def tracking_worker(tracker, duration_minutes, update_interval, data_queue, stop_flag):
     """Background tracking worker"""
     start_time = datetime.now(utc)
     end_time = start_time + timedelta(minutes=duration_minutes)
     
     current_time = start_time
     
-    while current_time < end_time and st.session_state.is_tracking:
+    while current_time < end_time and stop_flag['running']:
         # Perform tracking step
         result = tracker.track_step(current_time)
         
@@ -305,17 +307,19 @@ def main():
                 if st.button("🚀 Start Tracking"):
                     st.session_state.is_tracking = True
                     st.session_state.tracking_data = []
+                    st.session_state.stop_flag['running'] = True
                     
                     # Start background tracking
                     st.session_state.tracking_thread = threading.Thread(
                         target=tracking_worker,
-                        args=(st.session_state.tracker, duration_minutes, update_interval, st.session_state.data_queue)
+                        args=(st.session_state.tracker, duration_minutes, update_interval, st.session_state.data_queue, st.session_state.stop_flag)
                     )
                     st.session_state.tracking_thread.start()
                     st.rerun()
             else:
                 if st.button("⏹️ Stop Tracking"):
                     st.session_state.is_tracking = False
+                    st.session_state.stop_flag['running'] = False
                     st.rerun()
     
     # Main content

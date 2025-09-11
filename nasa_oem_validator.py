@@ -204,8 +204,11 @@ class NASAOEMValidator:
             velocities = []
             
             while current <= end_time:
+                # Ensure both times have same timezone for comparison
                 if current.tzinfo is None:
                     current = current.replace(tzinfo=utc)
+                if end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=utc)
                 t = ts.from_datetime(current)
                 geocentric = satellite.at(t)
                 
