@@ -94,7 +94,8 @@ class TrueEKFTracker:
     
     def predict_step(self, current_time):
         """Pure orbital mechanics prediction step"""
-        if self.state is None or self.last_prediction_time is None:
+        if self.state is None or self.last_prediction_time is None or self.covariance is None:
+            print("❌ EKF state/covariance/time not initialized, cannot predict")
             return False
         
         # Time since last prediction
@@ -140,6 +141,11 @@ class TrueEKFTracker:
     
     def update_step(self, measurement_pos, measurement_vel, current_time):
         """EKF measurement update with SGP4 observation"""
+        # Check if state and covariance are initialized
+        if self.state is None or self.covariance is None:
+            print("❌ EKF state not initialized, cannot perform update")
+            return False
+            
         # Measurement vector [x, y, z, vx, vy, vz]
         measurement = np.concatenate([measurement_pos, measurement_vel])
         
