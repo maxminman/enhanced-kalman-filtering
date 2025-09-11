@@ -1,0 +1,446 @@
+unix@DESKTOP-QSLF6IC:~/astrosolve2$ cat proper_ekf_tracker.py
+#!/usr/bin/env python3
+"""
+Proper Extended Kalman Filter Satellite Tracker
+===============================================
+Actually implements orbital mechanics with EKF, not just SGP4 wrapper
+"""
+
+import numpy as np
+import time
+import json
+from datetime import datetime, timedelta
+from skyfield.api import load, EarthSatellite, wgs84, utc
+import warnings
+warnings.filterwarnings('ignore')
+
+class ProperEKFTracker:
+    """Extended Kalman Filter with real orbital mechanics"""
+
+    def __init__(self):
+        self.ts = load.timescale()
+        self.satellite = None
+        self.satellite_data = None
+
+        # EKF state: [x, y, z, vx, vy, vz] in ECI coordinates (km, km/s)
+        self.state = None
+        self.covariance = None
+        self.last_time = None
+
+        # Earth parameters
+        self.mu = 398600.4418  # Earth's gravitational parameter km³/s²
+        self.J2 = 1.08262668e-3  # J2 perturbation coefficient
+        self.Re = 6378.137  # Earth radius km
+
+        # Tracking statistics
+        self.stats = {
+            'total_updates': 0,
+            'sub_300m_count': 0,
+            'sub_500m_count': 0,
+            'sub_1km_count': 0,
+            'accuracy_history': []
+        }
+
+        # Load satellite data
+        self.load_satellite_from_json()
+
+    def load_satellite_from_json(self):
+        """Load satellite information from selected_satellite.json"""
+        try:
+            with open('selected_satellite.json', 'r') as f:
+                self.satellite_data = json.load(f)
+
+            name = self.satellite_data['name']
+            line1 = self.satellite_data['tle_line1']
+            line2 = self.satellite_data['tle_line2']
+
+            self.satellite = EarthSatellite(line1, line2, name=name, ts=self.ts)
+
+            print(f"📡 Loaded satellite: {name}")
+            print(f"🆔 NORAD ID: {self.satellite_data['norad_id']}")
+            print(f"📊 Expected Accuracy: ±{self.satellite_data.get('expected_accuracy_m', 200)}m")
+
+            return True
+
+        except FileNotFoundError:
+            print("❌ Error: selected_satellite.json not found")
+            print("📝 Please run interactive_satellite_selector.py first")
+            return False
+        except Exception as e:
+            print(f"❌ Error loading satellite: {e}")
+            return False
+
+    def initialize_ekf(self):
+        """Initialize Extended Kalman Filter with SGP4 initial state"""
+        if self.satellite is None:
+            return False
+
+        # Get initial state from SGP4
+        current_time = self.ts.now()
+        geocentric = self.satellite.at(current_time)
+        r_eci = geocentric.position.km
+        v_eci = geocentric.velocity.km_per_s
+
+        # Initial state vector [x, y, z, vx, vy, vz]
+        self.state = np.concatenate([r_eci, v_eci])
+
+        # Conservative initial covariance
+        self.covariance = np.diag([1.0, 1.0, 1.0, 0.01, 0.01, 0.01])
+
+        self.last_time = current_time.tt
+
+        print("✅ Extended Kalman Filter initialized with orbital mechanics")
+        return True
+
+    def orbital_acceleration(self, r):
+        """Calculate acceleration due to gravity with J2 perturbation"""
+        r_mag = np.linalg.norm(r)
+
+        # Two-body acceleration
+        a_2body = -self.mu * r / (r_mag ** 3)
+
+        # J2 perturbation
+        x, y, z = r
+        r2 = r_mag ** 2
+        r5 = r_mag ** 5
+
+        # J2 acceleration components
+        factor = 1.5 * self.J2 * self.mu * (self.Re ** 2) / r5
+
+        a_j2_x = factor * x * (5 * (z ** 2) / r2 - 1)
+        a_j2_y = factor * y * (5 * (z ** 2) / r2 - 1)
+        a_j2_z = factor * z * (5 * (z ** 2) / r2 - 3)
+
+        a_j2 = np.array([a_j2_x, a_j2_y, a_j2_z])
+
+        return a_2body + a_j2
+
+    def state_transition_matrix(self, dt, r):
+        """Compute state transition matrix F"""
+        F = np.eye(6)
+
+        # Position derivatives (velocity)
+        F[:3, 3:] = np.eye(3) * dt
+
+        # Velocity derivatives (acceleration gradients)
+        r_mag = np.linalg.norm(r)
+
+        # Gradient of gravitational acceleration
+        mu_over_r3 = self.mu / (r_mag ** 3)
+        mu_over_r5 = self.mu / (r_mag ** 5)
+
+        # Simplified gradient (ignoring J2 for linearization)
+        for i in range(3):
+            for j in range(3):
+                if i == j:
+                    F[3+i, j] = (-mu_over_r3 + 3 * mu_over_r5 * r[i] * r[j]) * dt
+                else:
+                    F[3+i, j] = (3 * mu_over_r5 * r[i] * r[j]) * dt
+
+        return F
+
+    def predict_step(self, dt):
+        """EKF Prediction step with actual orbital mechanics"""
+        if dt <= 0:
+            return
+
+        # Current state
+        r = self.state[:3]
+        v = self.state[3:]
+
+        # Runge-Kutta 4th order integration
+        def dynamics(state):
+            pos = state[:3]
+            vel = state[3:]
+            acc = self.orbital_acceleration(pos)
+            return np.concatenate([vel, acc])
+
+        k1 = dynamics(self.state) * dt
+        k2 = dynamics(self.state + k1/2) * dt
+        k3 = dynamics(self.state + k2/2) * dt
+        k4 = dynamics(self.state + k3) * dt
+
+        # Update state
+        self.state = self.state + (k1 + 2*k2 + 2*k3 + k4) / 6
+
+        # State transition matrix
+        F = self.state_transition_matrix(dt, r)
+
+        # Process noise
+        q_pos = 0.001  # Position process noise (km)
+        q_vel = 0.0001  # Velocity process noise (km/s)
+        Q = np.diag([q_pos, q_pos, q_pos, q_vel, q_vel, q_vel]) * dt
+
+        # Covariance prediction
+        self.covariance = F @ self.covariance @ F.T + Q
+
+        # Ensure positive definite
+        self.covariance = self.make_positive_definite(self.covariance)
+
+    def update_step(self, measurement):
+        """EKF Update step with SGP4 measurements"""
+        # Measurement matrix (observe position only for stability)
+        H = np.zeros((3, 6))
+        H[:3, :3] = np.eye(3)
+
+        # Measurement noise (SGP4 uncertainty)
+        R = np.diag([0.5, 0.5, 0.5])  # km
+
+        # Innovation (only position)
+        measured_pos = measurement[:3]
+        predicted_pos = H @ self.state
+        y = measured_pos - predicted_pos
+
+        # Innovation covariance
+        S = H @ self.covariance @ H.T + R
+
+        # Kalman gain
+        try:
+            K = self.covariance @ H.T @ np.linalg.inv(S)
+        except np.linalg.LinAlgError:
+            K = self.covariance @ H.T @ np.linalg.pinv(S)
+
+        # State update
+        self.state = self.state + K @ y
+
+        # Covariance update (Joseph form)
+        I_KH = np.eye(6) - K @ H
+        self.covariance = I_KH @ self.covariance @ I_KH.T + K @ R @ K.T
+
+        # Ensure positive definite
+        self.covariance = self.make_positive_definite(self.covariance)
+
+    def make_positive_definite(self, matrix):
+        """Ensure matrix is positive definite"""
+        # Make symmetric
+        matrix = (matrix + matrix.T) / 2
+
+        # Eigenvalue decomposition
+        eigenvals, eigenvecs = np.linalg.eigh(matrix)
+
+        # Clip negative eigenvalues
+        eigenvals = np.maximum(eigenvals, 1e-12)
+
+        # Reconstruct matrix
+        return eigenvecs @ np.diag(eigenvals) @ eigenvecs.T
+
+    def get_position_uncertainty(self):
+        """Get position uncertainty from covariance matrix"""
+        # Extract position covariance
+        pos_cov = self.covariance[:3, :3]
+
+        # Calculate uncertainty magnitude
+        uncertainty_km = np.sqrt(np.trace(pos_cov))
+        return uncertainty_km
+
+    def eci_to_geodetic_proper(self, eci_pos):
+        """Convert ECI position to geodetic using proper WGS84"""
+        # Use Skyfield's proper conversion
+        subpoint = wgs84.subpoint_of(eci_pos)
+
+        return {
+            'latitude': subpoint.latitude.degrees,
+            'longitude': subpoint.longitude.degrees,
+            'altitude': subpoint.elevation.km
+        }
+
+    def track_step(self, current_time):
+        """Single tracking step"""
+        # Time step
+        dt = (current_time.tt - self.last_time) * 86400.0  # Convert to seconds
+
+        # EKF Prediction with orbital mechanics
+        if dt > 0:
+            self.predict_step(dt)
+
+        # Get SGP4 measurement
+        geocentric = self.satellite.at(current_time)
+        sgp4_r = geocentric.position.km
+        sgp4_v = geocentric.velocity.km_per_s
+        measurement = np.concatenate([sgp4_r, sgp4_v])
+
+        # EKF Update
+        self.update_step(measurement)
+
+        # Convert to geodetic using proper method
+        try:
+            geodetic = self.eci_to_geodetic_proper(self.state[:3])
+        except Exception as e:
+            print(f"Warning: Geodetic conversion failed: {e}")
+            # Fallback to SGP4 direct
+            sgp4_subpoint = geocentric.subpoint()
+            geodetic = {
+                'latitude': sgp4_subpoint.latitude.degrees,
+                'longitude': sgp4_subpoint.longitude.degrees,
+                'altitude': sgp4_subpoint.elevation.km
+            }
+
+        # Get uncertainty
+        uncertainty_km = self.get_position_uncertainty()
+        accuracy_m = uncertainty_km * 1000
+
+        # Update statistics
+        self.stats['total_updates'] += 1
+        self.stats['accuracy_history'].append(accuracy_m)
+
+        if accuracy_m < 300:
+            self.stats['sub_300m_count'] += 1
+        if accuracy_m < 500:
+            self.stats['sub_500m_count'] += 1
+        if accuracy_m < 1000:
+            self.stats['sub_1km_count'] += 1
+
+        self.last_time = current_time.tt
+
+        return {
+            'latitude': geodetic['latitude'],
+            'longitude': geodetic['longitude'],
+            'altitude': geodetic['altitude'],
+            'accuracy_m': accuracy_m
+        }
+
+    def get_status_info(self, accuracy_m):
+        """Get status emoji and text"""
+        if accuracy_m < 300:
+            return "🏆", "EKF BREAKTHROUGH"
+        elif accuracy_m < 500:
+            return "🎯", "EKF EXCELLENT"
+        elif accuracy_m < 1000:
+            return "✅", "EKF GOOD"
+        else:
+            return "⚠️", "EKF TUNING"
+
+    def print_tracking_update(self, coords, timestamp):
+        """Print tracking update"""
+        time_str = timestamp.strftime("%H:%M:%S")
+        lat = coords['latitude']
+        lon = coords['longitude']
+        alt = coords['altitude']
+        acc = coords['accuracy_m']
+
+        emoji, status = self.get_status_info(acc)
+
+        print(f"{emoji} {time_str} | Lat: {lat:10.6f}° | Lon: {lon:10.6f}° | Alt: {alt:7.3f}km | ±{acc:.0f}m | {status}")
+
+    def print_performance_summary(self):
+        """Print performance summary"""
+        total = self.stats['total_updates']
+        if total == 0:
+            return
+
+        sub_300_rate = (self.stats['sub_300m_count'] / total) * 100
+        sub_500_rate = (self.stats['sub_500m_count'] / total) * 100
+        sub_1km_rate = (self.stats['sub_1km_count'] / total) * 100
+
+        avg_accuracy = np.mean(self.stats['accuracy_history'][-10:]) if self.stats['accuracy_history'] else 0
+
+        print()
+        print("📊 EXTENDED KALMAN FILTER PERFORMANCE:")
+        print(f"   Sub-300m Achievement: {sub_300_rate:5.1f}% ({self.stats['sub_300m_count']}/{total})")
+        print(f"   Sub-500m Achievement: {sub_500_rate:5.1f}% ({self.stats['sub_500m_count']}/{total})")
+        print(f"   Sub-1km Achievement:  {sub_1km_rate:5.1f}% ({self.stats['sub_1km_count']}/{total})")
+        print(f"   Method: ORBITAL_MECHANICS_EKF")
+        print(f"   Average Accuracy: ±{avg_accuracy:.0f}m")
+
+        if sub_300_rate >= 75:
+            print(f"   Status: 🏆 BREAKTHROUGH - Sub-300m consistently achieved!")
+        elif sub_300_rate >= 50:
+            print(f"   Status: 🎯 EXCELLENT - High precision tracking!")
+        elif sub_500_rate >= 75:
+            print(f"   Status: ✅ GOOD - Reliable sub-500m tracking!")
+        else:
+            print(f"   Status: 🔧 TUNING - Filter optimization needed")
+        print()
+
+    def run_tracking(self, duration_minutes=10, update_interval=2):
+        """Run real-time tracking"""
+        if not self.initialize_ekf():
+            print("❌ Failed to initialize EKF")
+            return False
+
+        print("🚀 Starting Proper Extended Kalman Filter Tracking")
+        print("=" * 50)
+        print("🔬 Using real orbital mechanics with J2 perturbations")
+        print("⚡ Press Ctrl+C to stop tracking")
+        print()
+
+        start_time = datetime.now()
+        end_time = start_time + timedelta(minutes=duration_minutes)
+
+        try:
+            while datetime.now() < end_time:
+                current_time = self.ts.now()
+                coords = self.track_step(current_time)
+
+                # Print update
+                self.print_tracking_update(coords, datetime.now())
+
+                # Print summary every 8 updates
+                if self.stats['total_updates'] % 8 == 0:
+                    self.print_performance_summary()
+
+                time.sleep(update_interval)
+
+        except KeyboardInterrupt:
+            print("\n^C")
+
+        # Final results
+        print("🏁 ORBITAL MECHANICS EKF RESULTS:")
+        total = self.stats['total_updates']
+        if total > 0:
+            sub_300_rate = (self.stats['sub_300m_count'] / total) * 100
+            sub_500_rate = (self.stats['sub_500m_count'] / total) * 100
+            sub_1km_rate = (self.stats['sub_1km_count'] / total) * 100
+
+            print(f"   Sub-300m Rate: {sub_300_rate:.1f}%")
+            print(f"   Sub-500m Rate: {sub_500_rate:.1f}%")
+            print(f"   Sub-1km Rate:  {sub_1km_rate:.1f}%")
+            print(f"   Total Updates: {total}")
+            print(f"   Method: Extended Kalman Filter with Orbital Mechanics")
+            print(f"   Status: True EKF tracking complete! 🎯")
+
+        return True
+
+def main():
+    """Main function"""
+    print("🛰️ Proper Extended Kalman Filter Satellite Tracker")
+    print("=" * 50)
+    print("📂 Reading satellite from selected_satellite.json")
+    print("🔬 Implementing real orbital mechanics with EKF")
+    print()
+
+    tracker = ProperEKFTracker()
+
+    if tracker.satellite is None:
+        print("❌ No satellite loaded. Run interactive_satellite_selector.py first.")
+        return
+
+    # Run tracking
+    tracker.run_tracking(duration_minutes=10, update_interval=2)
+
+if __name__ == "__main__":
+    main()
+
+
+
+def get_position_at_time(target_time):
+    """Get position at specific time for validation"""
+    from skyfield.api import utc
+
+    tracker = ProperEKFTracker()  # ✅ Correct for proper_ekf_tracker.py
+    if not tracker.initialize_ekf():
+        return None
+
+    # Ensure target_time has UTC timezone
+    if target_time.tzinfo is None:
+        target_time = target_time.replace(tzinfo=utc)
+
+    # Convert to Skyfield time
+    skyfield_time = tracker.ts.from_datetime(target_time)
+    coords = tracker.track_step(skyfield_time)
+
+    return {
+        'latitude': coords['latitude'],
+        'longitude': coords['longitude'],
+        'altitude': coords['altitude']
+    }
