@@ -50,8 +50,8 @@ class OrbitalMechanics:
         
         return a_2body + a_j2
     
-    def atmospheric_drag(self, r, v, Cd_A=2.2e-3):  # km² (typical for ISS)
-        """Calculate atmospheric drag acceleration"""
+    def atmospheric_drag(self, r, v, CdA_over_m=2e-3):  # m²/kg (ISS: ~2e-3 m²/kg)
+        """Calculate atmospheric drag acceleration with correct physics"""
         r_mag = np.linalg.norm(r)
         altitude = r_mag - self.Re
         
@@ -59,21 +59,27 @@ class OrbitalMechanics:
         if altitude < 80:  # Below 80km, no significant drag
             return np.zeros(3)
         
-        # Density calculation
-        rho = self.rho0 * np.exp(-(altitude - (self.r0 - self.Re)) / self.H)
+        # Improved density model for LEO altitudes (kg/m³)
+        # Calibrated for realistic density at ISS altitude ~420km
+        rho0_420km = 2.4e-12  # kg/m³ at 420km altitude
+        H_scale = 60.0  # km, scale height for LEO
+        rho = rho0_420km * np.exp(-(altitude - 420.0) / H_scale)
         
         # Relative velocity (atmosphere rotates with Earth)
         omega_vec = np.array([0, 0, self.omega_e])
-        v_rel = v - np.cross(omega_vec, r)
-        v_rel_mag = np.linalg.norm(v_rel)
+        v_rel_km = v - np.cross(omega_vec, r)  # km/s
+        v_rel_m = v_rel_km * 1000.0  # Convert to m/s for SI calculation
+        v_rel_mag = np.linalg.norm(v_rel_m)  # m/s
         
         if v_rel_mag == 0:
             return np.zeros(3)
         
-        # Drag acceleration
-        drag_force = -0.5 * rho * Cd_A * v_rel_mag * v_rel
-        # Convert kg*km/s² to km/s² (assuming satellite mass cancels)
-        return drag_force * 1e-3  # Conversion factor for units
+        # Correct drag acceleration: a = -0.5 * (CdA/m) * rho * |v_rel| * v_rel
+        # Units: m²/kg * kg/m³ * m/s * m/s = m/s² 
+        drag_accel_m = -0.5 * CdA_over_m * rho * v_rel_mag * v_rel_m  # m/s²
+        
+        # Convert back to km/s² for orbital mechanics
+        return drag_accel_m / 1000.0
     
     def orbital_dynamics(self, t, state, include_drag=True):
         """Complete orbital dynamics function"""

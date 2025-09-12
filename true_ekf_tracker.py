@@ -34,7 +34,7 @@ class TrueEKFTracker:
         self.last_measurement_time = None
         
         # EKF configuration
-        self.measurement_interval = 300  # seconds (5 minutes between measurements)
+        self.measurement_interval = 60  # seconds (1 minute between measurements - prevents EKF divergence)
         self.prediction_step = 30  # seconds (30s prediction steps)
         
         # Statistics
@@ -115,27 +115,38 @@ class TrueEKFTracker:
         # Discrete-time state transition matrix
         F_discrete = np.eye(6) + F * dt
         
-        # Adaptive process noise based on altitude
+        # Kinematic process noise with continuous acceleration uncertainty
         altitude_km = np.linalg.norm(self.state[:3]) - 6378.137  # Earth radius
         
-        if altitude_km < 500:  # LEO (like ISS) - high drag uncertainty
-            q_pos = 1e-4  # 10cm position process noise per second
-            q_vel = 1e-7  # 0.1mm/s velocity process noise per second
+        # Continuous acceleration noise standard deviation (km/s²)
+        if altitude_km < 500:  # LEO (like ISS) - high drag variability
+            sigma_a = 1e-5  # 10 μm/s² continuous acceleration noise
         elif altitude_km < 1500:  # MEO
-            q_pos = 5e-5  # 5cm process noise
-            q_vel = 5e-8  # 0.05mm/s velocity process noise
-        else:  # GEO - minimal drag
-            q_pos = 1e-6  # 1mm process noise (original)
-            q_vel = 1e-9  # 1μm/s process noise (original)
+            sigma_a = 5e-6  # 5 μm/s² acceleration noise
+        else:  # GEO - minimal perturbations
+            sigma_a = 1e-6  # 1 μm/s² acceleration noise
         
-        # Scale with TLE age if available
+        # Scale with TLE age - older TLEs have more uncertainty
         if hasattr(self.sat_manager, 'satellite_data') and self.sat_manager.satellite_data:
             tle_age_hours = self.sat_manager.satellite_data.get('tle_age_hours', 24)
             age_factor = 1 + (tle_age_hours / 24) * 0.5  # 50% increase per day
-            q_pos *= age_factor
-            q_vel *= age_factor
+            sigma_a *= age_factor
         
-        Q = np.diag([q_pos, q_pos, q_pos, q_vel, q_vel, q_vel]) * dt
+        # Kinematic process noise matrix Q_d with proper correlation structure
+        # Q_d = [[dt³/3*I, dt²/2*I], [dt²/2*I, dt*I]] * σ_a²
+        dt2 = dt * dt
+        dt3 = dt2 * dt
+        
+        # Position-position block (3x3)
+        Q_pp = np.eye(3) * (dt3 / 3.0) * (sigma_a ** 2)
+        # Position-velocity block (3x3) 
+        Q_pv = np.eye(3) * (dt2 / 2.0) * (sigma_a ** 2)
+        # Velocity-velocity block (3x3)
+        Q_vv = np.eye(3) * dt * (sigma_a ** 2)
+        
+        # Assemble the 6x6 process noise matrix
+        Q = np.block([[Q_pp, Q_pv],
+                      [Q_pv, Q_vv]])
         
         # Covariance prediction
         self.covariance = F_discrete @ self.covariance @ F_discrete.T + Q
