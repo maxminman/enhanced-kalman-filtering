@@ -104,9 +104,9 @@ class TrueEKFTracker:
         if dt <= 0:
             return True  # No time has passed
         
-        # Propagate state using orbital mechanics (disable drag for validation)
+        # Propagate state using orbital mechanics (enable drag for accuracy)
         self.state = self.orbital_mechanics.propagate_state(
-            self.state, dt, include_drag=False
+            self.state, dt, include_drag=True
         )
         
         # Compute Jacobian for covariance propagation
@@ -115,9 +115,26 @@ class TrueEKFTracker:
         # Discrete-time state transition matrix
         F_discrete = np.eye(6) + F * dt
         
-        # Process noise (model uncertainty)
-        q_pos = 1e-6  # 1mm position process noise per second
-        q_vel = 1e-9  # 1μm/s velocity process noise per second
+        # Adaptive process noise based on altitude
+        altitude_km = np.linalg.norm(self.state[:3]) - 6378.137  # Earth radius
+        
+        if altitude_km < 500:  # LEO (like ISS) - high drag uncertainty
+            q_pos = 1e-4  # 10cm position process noise per second
+            q_vel = 1e-7  # 0.1mm/s velocity process noise per second
+        elif altitude_km < 1500:  # MEO
+            q_pos = 5e-5  # 5cm process noise
+            q_vel = 5e-8  # 0.05mm/s velocity process noise
+        else:  # GEO - minimal drag
+            q_pos = 1e-6  # 1mm process noise (original)
+            q_vel = 1e-9  # 1μm/s process noise (original)
+        
+        # Scale with TLE age if available
+        if hasattr(self.sat_manager, 'satellite_data') and self.sat_manager.satellite_data:
+            tle_age_hours = self.sat_manager.satellite_data.get('tle_age_hours', 24)
+            age_factor = 1 + (tle_age_hours / 24) * 0.5  # 50% increase per day
+            q_pos *= age_factor
+            q_vel *= age_factor
+        
         Q = np.diag([q_pos, q_pos, q_pos, q_vel, q_vel, q_vel]) * dt
         
         # Covariance prediction
