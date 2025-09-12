@@ -1,0 +1,12 @@
+International Space Station Trajectory Data
+NASA’s flight controllers in the International Space Station Mission Control Center at the agency’s Johnson Space Center in Houston generate the space stations trajectory data as passes over Earth at 17,500 miles per hour. The flight controllers, or International Space Station Trajectory Operations and Planning Officer, track the station’s current location, course, and potential collisions risks with other objects in orbit.
+
+At the station’s altitude, the thin atmosphere of Earth creates drag and can cause the projected trajectory to accumulate minor errors. To track the most accurate course, flight controllers update the data on the station’s trajectory approximately three times a week. An accurate trajectory is essential for maintaining communications links and planning visiting spacecraft rendezvous.
+
+NASA provides the station’s current trajectory data for public use within the Consultative Committee for Space Data Systems standard. The Orbit Ephemeris Message is available in .txt and .xml formats and contains header lines with the space station’s mass in kilograms, drag area in meters squared, drag coefficient, and a list of upcoming station maneuvers, and spacecraft launches, arrivals, and departures. Each file also includes details for the first and last ascending nodes, the point where the station’s orbit crosses the Earth’s equator moving from south to north. 
+
+The station’s state vectors in the mean of J2000 reference frame are listed at four-minute intervals spanning a total length of 15 days. During reboosts, the state vectors are reported in two-second intervals. Each state vector lists the time in Coordinated Universal Time; position x, y, and z in kilometers per second; and velocity x, y, and z in kilometers per second.
+
+Users of this data should monitor this page for additional information or changes to the file format. Past data is archived on data.nasa.gov and found by searching “ISS COORDS.”
+
+NASA provides this information for use by the public. The mobile application’s open-source code enables anyone to modify and use the code for their projects and support the tool’s growth. The Orbit Ephemeris Message data format is supported natively by many commercial spaceflight software applications. Please consult the application’s support documentation for specific details on how to deploy this data.
