@@ -33,8 +33,8 @@ class TrueEKFTracker:
         self.last_prediction_time = None
         self.last_measurement_time = None
         
-        # EKF configuration
-        self.measurement_interval = 60  # seconds (1 minute between measurements - prevents EKF divergence)
+        # EKF configuration - optimized for sub-1km performance
+        self.measurement_interval = 30  # seconds (30s for better correction frequency)
         self.prediction_step = 30  # seconds (30s prediction steps)
         
         # Statistics
@@ -69,15 +69,10 @@ class TrueEKFTracker:
         self.state = sgp4_initial_state
         print("✅ EKF initialized with SGP4 state - OEM data reserved for validation only")
         
-        # Initialize covariance based on SGP4 uncertainty estimates
-        noise_params = self.sat_manager.estimate_measurement_noise()
-        if not noise_params:
-            # Fallback defaults
-            pos_uncertainty = 0.5  # 500m
-            vel_uncertainty = 0.001  # 1mm/s
-        else:
-            pos_uncertainty = noise_params['position_noise_km']
-            vel_uncertainty = noise_params['velocity_noise_km_s']
+        # Initialize covariance - must match measurement noise scale for proper filter balance
+        # Use larger initial uncertainty to prevent over-confidence
+        pos_uncertainty = 5.0  # 5km initial position uncertainty (matches measurement noise)
+        vel_uncertainty = 0.02  # 20mm/s initial velocity uncertainty (larger than measurement noise)
         
         # Initial covariance (conservative)
         self.covariance = np.diag([
@@ -122,12 +117,12 @@ class TrueEKFTracker:
         # Kinematic process noise with continuous acceleration uncertainty
         altitude_km = np.linalg.norm(self.state[:3]) - 6378.137  # Earth radius
         
-        # Continuous acceleration noise standard deviation (km/s²) - CRITICAL FIX
-        # Fixed units: 10 μm/s² = 1e-8 km/s² (was incorrectly 1e-5)
+        # Continuous acceleration noise standard deviation (km/s²) - BALANCED FOR SUB-1KM
+        # Modest increase from pure 1e-8 to allow corrective measurement influence
         if altitude_km < 500:  # LEO (like ISS) - high drag variability
-            sigma_a = 5e-8  # 50 μm/s² continuous acceleration noise (tuned for sub-1km)
+            sigma_a = 5e-8  # 50 μm/s² (5x higher to balance filter trust)
         elif altitude_km < 1500:  # MEO
-            sigma_a = 2e-8  # 20 μm/s² acceleration noise
+            sigma_a = 3e-8  # 30 μm/s² acceleration noise
         else:  # GEO - minimal perturbations
             sigma_a = 1e-8  # 10 μm/s² acceleration noise
         
@@ -175,15 +170,17 @@ class TrueEKFTracker:
             print("❌ EKF state not initialized, cannot perform update")
             return False
             
-        # Measurement vector [x, y, z, vx, vy, vz]
-        measurement = np.concatenate([measurement_pos, measurement_vel])
+        # Measurement vector [x, y, z] - position only for better stability
+        measurement = measurement_pos
         
-        # Measurement matrix (observe full state)
-        H = np.eye(6)
+        # Measurement matrix (position-dominant to avoid SGP4 velocity bias)
+        # Use position-only measurements for better consistency
+        H = np.zeros((3, 6))
+        H[:3, :3] = np.eye(3)  # Observe position only
         
-        # Measurement noise based on realistic SGP4 uncertainty (CRITICAL FIX)
-        # SGP4 has km-level absolute accuracy, not sub-km
-        base_pos_noise = 5.0  # 5km realistic SGP4 position uncertainty
+        # Measurement noise based on realistic SGP4 uncertainty (BALANCED)
+        # Reduced slightly from 5km to allow more measurement influence
+        base_pos_noise = 3.0  # 3km SGP4 position uncertainty (balanced for sub-1km)
         base_vel_noise = 0.01  # 10mm/s realistic SGP4 velocity uncertainty
         
         # Scale with TLE age (moved from process noise)
@@ -196,9 +193,9 @@ class TrueEKFTracker:
             pos_noise = base_pos_noise
             vel_noise = base_vel_noise
         
+        # Measurement noise matrix (position-only)
         R = np.diag([
-            pos_noise**2, pos_noise**2, pos_noise**2,
-            vel_noise**2, vel_noise**2, vel_noise**2
+            pos_noise**2, pos_noise**2, pos_noise**2
         ])
         
         # Innovation
