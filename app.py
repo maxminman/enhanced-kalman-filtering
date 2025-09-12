@@ -67,11 +67,7 @@ def tracking_worker(tracker, duration_minutes, update_interval, data_queue, stop
     """Background tracking worker"""
     print(f"🚀 Starting tracking worker for {duration_minutes} minutes")
     
-    # Use the tracker's initialization time if available (for OEM data alignment)
-    if hasattr(tracker, 'last_prediction_time') and tracker.last_prediction_time:
-        start_time = tracker.last_prediction_time
-    else:
-        start_time = datetime.now(utc)
+    start_time = datetime.now(utc)
     
     end_time = start_time + timedelta(minutes=duration_minutes)
     current_time = start_time
@@ -98,7 +94,7 @@ def tracking_worker(tracker, duration_minutes, update_interval, data_queue, stop
         
         # Wait for next update
         time.sleep(update_interval)
-        current_time += timedelta(seconds=update_interval)
+        current_time = datetime.now(utc)
     
     print(f"🏁 Tracking completed. Processed {step_count} steps.")
     # Signal completion

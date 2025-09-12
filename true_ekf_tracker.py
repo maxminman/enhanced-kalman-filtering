@@ -52,13 +52,7 @@ class TrueEKFTracker:
     def initialize_ekf(self, initial_time=None):
         """Initialize EKF with SGP4 state as starting point"""
         if initial_time is None:
-            # Check if we have OEM data and use its start time for better bias correction
-            if hasattr(self.validator, 'oem_timestamps') and self.validator.oem_timestamps:
-                # Use OEM data start time + 1 hour for realistic tracking scenario
-                initial_time = self.validator.oem_timestamps[0] + timedelta(hours=1)
-                print(f"🎯 Using OEM data timespan for tracking: {initial_time}")
-            else:
-                initial_time = datetime.now(utc)
+            initial_time = datetime.now(utc)
         
         # Get initial state from SGP4
         sgp4_state = self.sat_manager.get_sgp4_state_at_time(initial_time)
@@ -71,37 +65,9 @@ class TrueEKFTracker:
             sgp4_state['velocity_km_s']
         ])
         
-        # Apply startup bias correction to align with OEM reference
-        if hasattr(self.validator, 'oem_timestamps') and self.validator.oem_timestamps:
-            # Find closest OEM data point to initialization time
-            time_diffs = [(abs((t - initial_time).total_seconds())) for t in self.validator.oem_timestamps]
-            closest_idx = np.argmin(time_diffs)
-            
-            # Use OEM data if within reasonable time window (5 minutes)
-            if time_diffs[closest_idx] <= 300:  # 5 minutes
-                oem_position = self.validator.oem_positions[closest_idx]
-                oem_velocity = self.validator.oem_velocities[closest_idx]
-                oem_state = np.concatenate([oem_position, oem_velocity])
-                
-                # Calculate and apply bias correction
-                startup_bias = sgp4_initial_state - oem_state
-                self.startup_bias = startup_bias
-                self.state = oem_state  # Initialize with OEM-corrected state
-                
-                bias_pos_km = np.linalg.norm(startup_bias[:3])
-                time_diff_min = time_diffs[closest_idx] / 60
-                print(f"🎯 Startup bias correction applied: {bias_pos_km:.3f}km SGP4-OEM offset removed")
-                print(f"📅 Using OEM data {time_diff_min:.1f} minutes from initialization time")
-            else:
-                # OEM data too far from initialization time
-                self.startup_bias = np.zeros(6)
-                self.state = sgp4_initial_state
-                print(f"⚠️ No OEM data within 5 minutes of initialization (closest: {time_diffs[closest_idx]/60:.1f}min)")
-        else:
-            # No OEM data available
-            self.startup_bias = np.zeros(6)
-            self.state = sgp4_initial_state
-            print("⚠️ No OEM data loaded for bias correction, using SGP4 initialization")
+        # Initialize with SGP4 state (OEM data only used for validation, not initialization)
+        self.state = sgp4_initial_state
+        print("✅ EKF initialized with SGP4 state - OEM data reserved for validation only")
         
         # Initialize covariance based on SGP4 uncertainty estimates
         noise_params = self.sat_manager.estimate_measurement_noise()
