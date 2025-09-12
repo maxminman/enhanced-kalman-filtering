@@ -122,19 +122,16 @@ class TrueEKFTracker:
         # Kinematic process noise with continuous acceleration uncertainty
         altitude_km = np.linalg.norm(self.state[:3]) - 6378.137  # Earth radius
         
-        # Continuous acceleration noise standard deviation (km/s²)
+        # Continuous acceleration noise standard deviation (km/s²) - CRITICAL FIX
+        # Fixed units: 10 μm/s² = 1e-8 km/s² (was incorrectly 1e-5)
         if altitude_km < 500:  # LEO (like ISS) - high drag variability
-            sigma_a = 1e-5  # 10 μm/s² continuous acceleration noise
+            sigma_a = 5e-8  # 50 μm/s² continuous acceleration noise (tuned for sub-1km)
         elif altitude_km < 1500:  # MEO
-            sigma_a = 5e-6  # 5 μm/s² acceleration noise
+            sigma_a = 2e-8  # 20 μm/s² acceleration noise
         else:  # GEO - minimal perturbations
-            sigma_a = 1e-6  # 1 μm/s² acceleration noise
+            sigma_a = 1e-8  # 10 μm/s² acceleration noise
         
-        # Scale with TLE age - older TLEs have more uncertainty
-        if hasattr(self.sat_manager, 'satellite_data') and self.sat_manager.satellite_data:
-            tle_age_hours = self.sat_manager.satellite_data.get('tle_age_hours', 24)
-            age_factor = 1 + (tle_age_hours / 24) * 0.5  # 50% increase per day
-            sigma_a *= age_factor
+        # TLE age scaling removed from process noise (moved to measurement noise)
         
         # Kinematic process noise matrix Q_d with proper correlation structure
         # Q_d = [[dt³/3*I, dt²/2*I], [dt²/2*I, dt*I]] * σ_a²
@@ -184,15 +181,20 @@ class TrueEKFTracker:
         # Measurement matrix (observe full state)
         H = np.eye(6)
         
-        # Measurement noise based on SGP4 uncertainty
-        noise_params = self.sat_manager.estimate_measurement_noise()
-        if not noise_params:
-            # Fallback defaults
-            pos_noise = 0.5  # 500m
-            vel_noise = 0.001  # 1mm/s
+        # Measurement noise based on realistic SGP4 uncertainty (CRITICAL FIX)
+        # SGP4 has km-level absolute accuracy, not sub-km
+        base_pos_noise = 5.0  # 5km realistic SGP4 position uncertainty
+        base_vel_noise = 0.01  # 10mm/s realistic SGP4 velocity uncertainty
+        
+        # Scale with TLE age (moved from process noise)
+        if hasattr(self.sat_manager, 'satellite_data') and self.sat_manager.satellite_data:
+            tle_age_hours = self.sat_manager.satellite_data.get('tle_age_hours', 24)
+            age_factor = 1 + (tle_age_hours / 24) * 0.5  # 50% increase per day
+            pos_noise = base_pos_noise * age_factor
+            vel_noise = base_vel_noise * age_factor
         else:
-            pos_noise = noise_params['position_noise_km']
-            vel_noise = noise_params['velocity_noise_km_s']
+            pos_noise = base_pos_noise
+            vel_noise = base_vel_noise
         
         R = np.diag([
             pos_noise**2, pos_noise**2, pos_noise**2,

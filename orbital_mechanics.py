@@ -50,7 +50,7 @@ class OrbitalMechanics:
         
         return a_2body + a_j2
     
-    def atmospheric_drag(self, r, v, CdA_over_m=2e-3):  # m²/kg (ISS: ~2e-3 m²/kg)
+    def atmospheric_drag(self, r, v, CdA_over_m=1e-3):  # m²/kg (ISS: ~1e-3 m²/kg, tuned for accuracy)
         """Calculate atmospheric drag acceleration with correct physics"""
         r_mag = np.linalg.norm(r)
         altitude = r_mag - self.Re
