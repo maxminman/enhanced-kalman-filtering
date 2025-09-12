@@ -1,4 +1,9 @@
 [server]
 headless = true
-address = "0.0.0.0"
+enableCORS = false
+enableXsrfProtection = false
 port = 5000
+address = "0.0.0.0"
+
+[browser]
+gatherUsageStats = false
