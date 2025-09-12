@@ -52,7 +52,13 @@ class TrueEKFTracker:
     def initialize_ekf(self, initial_time=None):
         """Initialize EKF with SGP4 state as starting point"""
         if initial_time is None:
-            initial_time = datetime.now(utc)
+            # Check if we have OEM data and use its start time for better bias correction
+            if hasattr(self.validator, 'oem_timestamps') and self.validator.oem_timestamps:
+                # Use OEM data start time + 1 hour for realistic tracking scenario
+                initial_time = self.validator.oem_timestamps[0] + timedelta(hours=1)
+                print(f"🎯 Using OEM data timespan for tracking: {initial_time}")
+            else:
+                initial_time = datetime.now(utc)
         
         # Get initial state from SGP4
         sgp4_state = self.sat_manager.get_sgp4_state_at_time(initial_time)
