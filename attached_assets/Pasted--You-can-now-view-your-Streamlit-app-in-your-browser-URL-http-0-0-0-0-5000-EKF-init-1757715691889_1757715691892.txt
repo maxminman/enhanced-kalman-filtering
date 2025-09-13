@@ -1,0 +1,292 @@
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://0.0.0.0:5000
+
+✅ EKF initialized with SGP4 state - OEM data reserved for validation only
+✅ True EKF initialized with orbital mechanics
+📍 Initial position uncertainty: ±5000m
+🚀 Initial velocity uncertainty: ±20.0mm/s
+⏱️ Measurement interval: 30s
+🔄 Prediction step: 30s
+📡 Loading NASA ISS OEM data from official ephemeris file...
+✅ Loaded 5405 NASA ISS OEM data points
+📅 Coverage: 2025-09-10 12:00:00+00:00 to 2025-09-25 12:00:00+00:00
+🚀 Starting tracking worker for 15 minutes
+📍 Tracking step 1 at 2025-09-12 22:05:44.296652+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(20.92878751044514), 'error_m': np.float64(20928.78751044514), 'oem_position': array([-4424.4274023 ,   880.30451744, -5056.35068997]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 2 at 2025-09-12 22:05:49.356502+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(16.620624440143082), 'error_m': np.float64(16620.62444014308), 'oem_position': array([-4444.1636031 ,   847.64621494, -5050.47369661]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 3 at 2025-09-12 22:05:54.361050+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(12.198753580836406), 'error_m': np.float64(12198.753580836406), 'oem_position': array([-4463.68409565,   815.34485374, -5044.66093627]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 4 at 2025-09-12 22:05:59.365655+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(7.723408635412942), 'error_m': np.float64(7723.408635412942), 'oem_position': array([-4483.20481053,   783.04312464, -5038.84810973]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 5 at 2025-09-12 22:06:04.372650+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(3.861122113431897), 'error_m': np.float64(3861.122113431897), 'oem_position': array([-4502.73484773,   750.72596952, -5033.03250722]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 6 at 2025-09-12 22:06:09.379554+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(4.599263377249173), 'error_m': np.float64(4599.263377249173), 'oem_position': array([-4517.66048611,   717.65391339, -5022.06542656]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 7 at 2025-09-12 22:06:14.384055+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(8.770613269198325), 'error_m': np.float64(8770.613269198326), 'oem_position': array([-4530.36304894,   684.23411555, -5008.62416791]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 8 at 2025-09-12 22:06:19.388499+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(13.254562924626734), 'error_m': np.float64(13254.562924626734), 'oem_position': array([-4543.06546709,   650.81469836, -4995.18306236]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 9 at 2025-09-12 22:06:24.392934+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(17.645067175962488), 'error_m': np.float64(17645.06717596249), 'oem_position': array([-4555.76786239,   617.39534127, -4981.74198098]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 10 at 2025-09-12 22:06:29.397238+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(21.86562786754681), 'error_m': np.float64(21865.62786754681), 'oem_position': array([-4568.46992518,   583.97685899, -4968.30125144]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 11 at 2025-09-12 22:06:34.401555+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(25.89261229708904), 'error_m': np.float64(25892.612297089043), 'oem_position': array([-4581.17202097,   550.55828989, -4954.86048698]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 12 at 2025-09-12 22:06:39.405976+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(29.716369820459175), 'error_m': np.float64(29716.369820459175), 'oem_position': array([-4593.87438074,   517.13902629, -4941.4194432 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 13 at 2025-09-12 22:06:44.410200+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(33.331967042193995), 'error_m': np.float64(33331.967042193995), 'oem_position': array([-4606.57624048,   483.72107824, -4927.97892853]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 14 at 2025-09-12 22:06:49.414490+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(36.73703805343027), 'error_m': np.float64(36737.03805343027), 'oem_position': array([-4619.27826773,   450.30268945, -4914.5382366 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 15 at 2025-09-12 22:06:54.418801+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(39.93002604387955), 'error_m': np.float64(39930.02604387955), 'oem_position': array([-4631.9803483 ,   416.88416043, -4901.09748826]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 16 at 2025-09-12 22:06:59.423261+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(42.910038692222074), 'error_m': np.float64(42910.03869222207), 'oem_position': array([-4644.68280705,   383.46463639, -4887.65633973]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 17 at 2025-09-12 22:07:04.427558+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(45.676248427437116), 'error_m': np.float64(45676.248427437116), 'oem_position': array([-4657.38485208,   350.04620085, -4874.21562899]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 18 at 2025-09-12 22:07:09.434897+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(48.22979456938568), 'error_m': np.float64(48229.79456938568), 'oem_position': array([-4670.0946184 ,   316.607451  , -4860.76674795]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 19 at 2025-09-12 22:07:14.439027+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(50.56717756870208), 'error_m': np.float64(50567.17756870208), 'oem_position': array([-4682.79623954,   283.19013068, -4847.32648575]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 20 at 2025-09-12 22:07:19.443252+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(52.68990190209115), 'error_m': np.float64(52689.90190209115), 'oem_position': array([-4695.49810181,   249.77217595, -4833.88596839]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 21 at 2025-09-12 22:07:24.447408+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(54.59771509165698), 'error_m': np.float64(54597.71509165698), 'oem_position': array([-4708.19978895,   216.35468201, -4820.44563636]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 22 at 2025-09-12 22:07:29.451547+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(56.29050259677469), 'error_m': np.float64(56290.502596774684), 'oem_position': array([-4720.90143293,   182.93730159, -4807.00534998]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 23 at 2025-09-12 22:07:34.455760+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(57.76818217436452), 'error_m': np.float64(57768.18217436452), 'oem_position': array([-4733.60326475,   149.519427  , -4793.56486485]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 24 at 2025-09-12 22:07:39.460245+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(59.03070391012068), 'error_m': np.float64(59030.703910120676), 'oem_position': array([-4746.30578696,   116.09973601, -4780.12364918]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 25 at 2025-09-12 22:07:44.465049+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.07797376435936), 'error_m': np.float64(60077.97376435936), 'oem_position': array([-4759.00911887,    82.67791476, -4766.68157673]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 26 at 2025-09-12 22:07:49.469333+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.9097762363823), 'error_m': np.float64(60909.7762363823), 'oem_position': array([-4771.7111309 ,    49.25956603, -4753.2409009 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 27 at 2025-09-12 22:07:54.473787+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.52620813960888), 'error_m': np.float64(61526.20813960888), 'oem_position': array([-4784.41357443,    15.84008206, -4739.79976849]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 28 at 2025-09-12 22:07:59.478217+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.92720645905982), 'error_m': np.float64(61927.20645905982), 'oem_position': array([-4797.11595704,   -17.57924164, -4726.35870054]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 29 at 2025-09-12 22:08:04.482926+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.11275898720526), 'error_m': np.float64(62112.75898720526), 'oem_position': array([-4809.81904782,   -51.00042849, -4712.91688324]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 30 at 2025-09-12 22:08:09.489821+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.082766198176884), 'error_m': np.float64(62082.76619817688), 'oem_position': array([-4822.52768716,   -84.43621334, -4699.46919471]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 31 at 2025-09-12 22:08:14.496949+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.83708122781794), 'error_m': np.float64(61837.08122781794), 'oem_position': array([-4835.23691791,  -117.87355414, -4686.02088037]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 32 at 2025-09-12 22:08:19.504079+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.3757067312299), 'error_m': np.float64(61375.7067312299), 'oem_position': array([-4847.94615373,  -151.31090831, -4672.57256067]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 33 at 2025-09-12 22:08:24.511189+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.698661595928044), 'error_m': np.float64(60698.661595928046), 'oem_position': array([-4860.65533879,  -184.74812891, -4659.12429468]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 34 at 2025-09-12 22:08:29.518504+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(59.80592912549662), 'error_m': np.float64(59805.929125496616), 'oem_position': array([-4873.36504419,  -218.18671849, -4645.6754781 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 35 at 2025-09-12 22:08:34.526566+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(58.69738811738227), 'error_m': np.float64(58697.38811738227), 'oem_position': array([-4886.07664564,  -251.6302965 , -4632.22465519]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 36 at 2025-09-12 22:08:39.531986+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(57.3739611339226), 'error_m': np.float64(57373.961133922596), 'oem_position': array([-4898.7815411 ,  -285.05623138, -4618.78092827]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 37 at 2025-09-12 22:08:44.539946+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(55.83435049061484), 'error_m': np.float64(55834.35049061484), 'oem_position': array([-4911.49288366,  -318.49912824, -4605.33037932]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 38 at 2025-09-12 22:08:49.544046+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(54.08069436821831), 'error_m': np.float64(54080.69436821831), 'oem_position': array([-4924.19442865,  -351.91624822, -4591.89019769]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 39 at 2025-09-12 22:08:54.548207+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(52.1119743392435), 'error_m': np.float64(52111.974339243505), 'oem_position': array([-4936.89612848,  -385.33377555, -4578.44985223]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 40 at 2025-09-12 22:08:59.552271+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(49.92839880633966), 'error_m': np.float64(49928.39880633966), 'oem_position': array([-4949.5975821 ,  -418.75065512, -4565.00976729]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 41 at 2025-09-12 22:09:04.556327+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(47.530125143509686), 'error_m': np.float64(47530.125143509686), 'oem_position': array([-4962.29901541,  -452.16748127, -4551.56970384]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 42 at 2025-09-12 22:09:09.562063+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(44.916490510457336), 'error_m': np.float64(44916.49051045733), 'oem_position': array([-4975.00471295,  -485.59552638, -4538.12512819]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 43 at 2025-09-12 22:09:14.569225+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(42.08777558127818), 'error_m': np.float64(42087.77558127818), 'oem_position': array([-4987.71403   ,  -519.03309423, -4524.67672254]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 44 at 2025-09-12 22:09:19.576238+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(39.045278271285966), 'error_m': np.float64(39045.27827128596), 'oem_position': array([-5000.42296885,  -552.46966708, -4511.22871707]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 45 at 2025-09-12 22:09:24.583306+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(35.78959618301772), 'error_m': np.float64(35789.59618301772), 'oem_position': array([-5013.1320473 ,  -585.90660721, -4497.78056389]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 46 at 2025-09-12 22:09:29.590380+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(32.32184852959733), 'error_m': np.float64(32321.848529597333), 'oem_position': array([-5025.84114099,  -619.3435874 , -4484.33239459]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 47 at 2025-09-12 22:09:34.597502+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(28.643760621278034), 'error_m': np.float64(28643.760621278034), 'oem_position': array([-5038.55035651,  -652.78088814, -4470.88409638]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 48 at 2025-09-12 22:09:39.604639+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(24.75838920662556), 'error_m': np.float64(24758.389206625558), 'oem_position': array([-5051.2596101 ,  -686.21828905, -4457.43575787]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 49 at 2025-09-12 22:09:44.616898+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(20.667217222569132), 'error_m': np.float64(20667.217222569132), 'oem_position': array([-5063.9818645 ,  -719.68989441, -4443.97366252]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 50 at 2025-09-12 22:09:49.623946+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(16.391093546092147), 'error_m': np.float64(16391.093546092146), 'oem_position': array([-5076.69089219,  -753.12670098, -4430.52556306]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 51 at 2025-09-12 22:09:54.630352+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(11.958838028053096), 'error_m': np.float64(11958.838028053096), 'oem_position': array([-5089.39829034,  -786.55922031, -4417.0791879 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 52 at 2025-09-12 22:09:59.634806+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(7.488350736135461), 'error_m': np.float64(7488.3507361354605), 'oem_position': array([-5102.10073386,  -819.97870428, -4403.63805548]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 53 at 2025-09-12 22:10:04.638924+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(3.7374296449649496), 'error_m': np.float64(3737.4296449649496), 'oem_position': array([-5114.80232455,  -853.39594447, -4390.19782551]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 54 at 2025-09-12 22:10:09.643116+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(4.788080017953549), 'error_m': np.float64(4788.080017953549), 'oem_position': array([-5121.863551  ,  -885.86278162, -4371.90972333]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 55 at 2025-09-12 22:10:14.649149+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(9.0049859085122), 'error_m': np.float64(9004.9859085122), 'oem_position': array([-5126.81927752,  -917.98617511, -4351.80312556]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 56 at 2025-09-12 22:10:19.653408+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(13.48980440939393), 'error_m': np.float64(13489.80440939393), 'oem_position': array([-5131.77324787,  -950.09818496, -4331.70365301]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 57 at 2025-09-12 22:10:24.657837+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(17.875113261118653), 'error_m': np.float64(17875.11326111865), 'oem_position': array([-5136.72738651,  -982.21128569, -4311.60349766]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 58 at 2025-09-12 22:10:29.664511+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(22.090727806421736), 'error_m': np.float64(22090.727806421735), 'oem_position': array([-5141.6837476 , -1014.33879244, -4291.49432533]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 59 at 2025-09-12 22:10:34.671870+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(26.112391921136773), 'error_m': np.float64(26112.391921136772), 'oem_position': array([-5146.6407868 , -1046.47069478, -4271.38240171]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 60 at 2025-09-12 22:10:39.678989+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(29.929917231203397), 'error_m': np.float64(29929.9172312034), 'oem_position': array([-5151.59758841, -1078.60105707, -4251.27144205]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 61 at 2025-09-12 22:10:44.686297+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(33.54230716104849), 'error_m': np.float64(33542.30716104849), 'oem_position': array([-5156.55457712, -1110.73263215, -4231.15972327]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 62 at 2025-09-12 22:10:49.693721+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(36.94041491488464), 'error_m': np.float64(36940.41491488464), 'oem_position': array([-5161.51168066, -1142.8649516 , -4211.04753858]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 63 at 2025-09-12 22:10:54.774831+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(40.171241253648695), 'error_m': np.float64(40171.241253648695), 'oem_position': array([-5166.54172973, -1175.4701094 , -4190.63939605]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 64 at 2025-09-12 22:10:59.790697+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(43.14494128100225), 'error_m': np.float64(43144.94128100225), 'oem_position': array([-5171.50719044, -1207.65660062, -4170.49330429]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 65 at 2025-09-12 22:11:04.795175+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(45.89773267571412), 'error_m': np.float64(45897.73267571412), 'oem_position': array([-5176.46137759, -1239.77001578, -4150.39295214]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 66 at 2025-09-12 22:11:09.801193+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(48.43691596801108), 'error_m': np.float64(48436.915968011075), 'oem_position': array([-5181.41708926, -1271.89331302, -4130.28641461]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 67 at 2025-09-12 22:11:14.805631+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(50.760591689122776), 'error_m': np.float64(50760.591689122775), 'oem_position': array([-5186.37123681, -1304.0064715 , -4110.18622311]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 68 at 2025-09-12 22:11:19.818718+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(52.87281609116718), 'error_m': np.float64(52872.81609116718), 'oem_position': array([-5191.33394645, -1336.17513005, -4090.05129314]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 69 at 2025-09-12 22:11:24.824882+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(54.76673597504404), 'error_m': np.float64(54766.735975044045), 'oem_position': array([-5196.28980266, -1368.29936416, -4069.94416921]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 70 at 2025-09-12 22:11:29.829273+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(56.44472100899792), 'error_m': np.float64(56444.72100899792), 'oem_position': array([-5201.24390368, -1400.41222105, -4049.84416648]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 71 at 2025-09-12 22:11:34.833529+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(57.907334220819514), 'error_m': np.float64(57907.33422081952), 'oem_position': array([-5206.19787106, -1432.52421164, -4029.74470598]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 72 at 2025-09-12 22:11:39.838295+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(59.15465373598178), 'error_m': np.float64(59154.65373598178), 'oem_position': array([-5211.15234332, -1464.63947488, -4009.64319708]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 73 at 2025-09-12 22:11:44.842886+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.18641922438602), 'error_m': np.float64(60186.41922438602), 'oem_position': array([-5216.10664233, -1496.75361515, -3989.54239106]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 74 at 2025-09-12 22:11:49.849742+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.002945484027805), 'error_m': np.float64(61002.945484027805), 'oem_position': array([-5221.06318359, -1528.88228978, -3969.43248773]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 75 at 2025-09-12 22:11:54.853993+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.60341951769356), 'error_m': np.float64(61603.41951769356), 'oem_position': array([-5226.01714602, -1560.99424829, -3949.33304731]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 76 at 2025-09-12 22:11:59.858575+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.98831063254112), 'error_m': np.float64(61988.31063254112), 'oem_position': array([-5230.97143612, -1593.10833081, -3929.23227744]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 77 at 2025-09-12 22:12:04.863814+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.157559799991276), 'error_m': np.float64(62157.55979999128), 'oem_position': array([-5235.92637663, -1625.22662925, -3909.12886875]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 78 at 2025-09-12 22:12:09.868418+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.11111074083964), 'error_m': np.float64(62111.11074083964), 'oem_position': array([-5240.88068851, -1657.34085294, -3889.02801052]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 79 at 2025-09-12 22:12:14.873714+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.848945090581225), 'error_m': np.float64(61848.94509058123), 'oem_position': array([-5245.83568544, -1689.45951715, -3868.92437289]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 80 at 2025-09-12 22:12:19.878434+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.37112828540296), 'error_m': np.float64(61371.12828540296), 'oem_position': array([-5250.79011216, -1721.57448521, -3848.82304874]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 81 at 2025-09-12 22:12:24.883166+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.67765647695354), 'error_m': np.float64(60677.65647695354), 'oem_position': array([-5255.74455076, -1753.68953026, -3828.7216764 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 82 at 2025-09-12 22:12:29.887765+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(59.76858354477631), 'error_m': np.float64(59768.58354477631), 'oem_position': array([-5260.69885769, -1785.80372187, -3808.62083825]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 83 at 2025-09-12 22:12:34.893551+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(58.64363902023708), 'error_m': np.float64(58643.63902023708), 'oem_position': array([-5265.6543397 , -1817.92553038, -3788.51523255]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 84 at 2025-09-12 22:12:39.898175+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(57.303399975647864), 'error_m': np.float64(57303.399975647866), 'oem_position': array([-5270.60867138, -1850.03988241, -3768.41429399]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 85 at 2025-09-12 22:12:44.903691+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(55.74740077865337), 'error_m': np.float64(55747.40077865337), 'oem_position': array([-5275.5638861 , -1882.15995834, -3748.30977273]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 86 at 2025-09-12 22:12:49.908248+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(53.97630829011915), 'error_m': np.float64(53976.30829011915), 'oem_position': array([-5280.51815146, -1914.27388044, -3728.20910327]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 87 at 2025-09-12 22:12:54.912692+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(51.99000539021511), 'error_m': np.float64(51990.00539021511), 'oem_position': array([-5285.47230495, -1946.38707742, -3708.10888767]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 88 at 2025-09-12 22:12:59.921557+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(49.78656220068924), 'error_m': np.float64(49786.56220068924), 'oem_position': array([-5290.43083501, -1978.52864367, -3687.99091525]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 89 at 2025-09-12 22:13:04.929199+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(47.36845024089132), 'error_m': np.float64(47368.45024089132), 'oem_position': array([-5295.38815437, -2010.66236201, -3667.87785497]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 90 at 2025-09-12 22:13:09.933793+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(44.73708742889732), 'error_m': np.float64(44737.08742889732), 'oem_position': array([-5300.34245635, -2042.77652153, -3647.7770369 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 91 at 2025-09-12 22:13:14.938115+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(41.8915864684911), 'error_m': np.float64(41891.5864684911), 'oem_position': array([-5305.29648907, -2074.88893565, -3627.67731132]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 92 at 2025-09-12 22:13:19.942432+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(38.83232000472847), 'error_m': np.float64(38832.32000472847), 'oem_position': array([-5310.25051684, -2107.00131768, -3607.57760581]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 93 at 2025-09-12 22:13:24.946771+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(35.56001244343075), 'error_m': np.float64(35560.01244343075), 'oem_position': array([-5315.20456639, -2139.11384088, -3587.47781194]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 94 at 2025-09-12 22:13:29.951310+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(32.07566921228343), 'error_m': np.float64(32075.66921228343), 'oem_position': array([-5320.15881392, -2171.22764747, -3567.37721478]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 95 at 2025-09-12 22:13:34.955742+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(28.38133650365573), 'error_m': np.float64(28381.33650365573), 'oem_position': array([-5325.11295554, -2203.34076744, -3547.27704738]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 96 at 2025-09-12 22:13:39.960507+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(24.479869904402364), 'error_m': np.float64(24479.869904402363), 'oem_position': array([-5330.0674268 , -2235.45602426, -3527.1755425 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 97 at 2025-09-12 22:13:44.965377+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(20.377520585235104), 'error_m': np.float64(20377.520585235103), 'oem_position': array([-5335.02200201, -2267.57195486, -3507.07361588]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 98 at 2025-09-12 22:13:49.971563+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(16.086508272352763), 'error_m': np.float64(16086.508272352763), 'oem_position': array([-5339.97788   , -2299.69633014, -3486.96640359]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 99 at 2025-09-12 22:13:54.976207+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(11.644622546111), 'error_m': np.float64(11644.622546111), 'oem_position': array([-5344.93223148, -2331.81081051, -3466.8653847 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 100 at 2025-09-12 22:13:59.981107+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(7.181664077289562), 'error_m': np.float64(7181.664077289562), 'oem_position': array([-5349.88683639, -2363.92693361, -3446.76333759]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 101 at 2025-09-12 22:14:04.986169+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(3.594738089394045), 'error_m': np.float64(3594.738089394045), 'oem_position': array([-5354.84160167, -2396.04409626, -3426.66063981]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 102 at 2025-09-12 22:14:09.992563+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(5.039682702638695), 'error_m': np.float64(5039.6827026386945), 'oem_position': array([-5353.31963425, -2425.26343007, -3402.40137604]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 103 at 2025-09-12 22:14:14.997328+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(9.307277257178981), 'error_m': np.float64(9307.277257178981), 'oem_position': array([-5350.15372657, -2453.73548079, -3377.09623109]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 104 at 2025-09-12 22:14:20.002700+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(13.793617220577385), 'error_m': np.float64(13793.617220577386), 'oem_position': array([-5346.98743492, -2482.21098473, -3351.78801701]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 105 at 2025-09-12 22:14:25.007357+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(18.17174174236277), 'error_m': np.float64(18171.74174236277), 'oem_position': array([-5343.82159556, -2510.68242104, -3326.48341813]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 106 at 2025-09-12 22:14:30.011937+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(22.375977109312213), 'error_m': np.float64(22375.977109312214), 'oem_position': array([-5340.65580491, -2539.15341929, -3301.17920857]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 107 at 2025-09-12 22:14:35.016512+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(26.38492808317914), 'error_m': np.float64(26384.92808317914), 'oem_position': array([-5337.49001742, -2567.62438911, -3275.8750243 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 108 at 2025-09-12 22:14:40.023540+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(30.191424512278534), 'error_m': np.float64(30191.424512278532), 'oem_position': array([-5334.32267822, -2596.10931401, -3250.55843714]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 109 at 2025-09-12 22:14:45.028138+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(33.78732572813564), 'error_m': np.float64(33787.32572813564), 'oem_position': array([-5331.15687618, -2624.58041467, -3225.25413657]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 110 at 2025-09-12 22:14:50.032541+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(37.17196450062048), 'error_m': np.float64(37171.96450062048), 'oem_position': array([-5327.9911975 , -2653.05040598, -3199.95082196]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 111 at 2025-09-12 22:14:55.036851+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(40.34397023625542), 'error_m': np.float64(40343.97023625542), 'oem_position': array([-5324.82557764, -2681.51986821, -3174.64797758]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 112 at 2025-09-12 22:15:00.041217+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(43.30250995177509), 'error_m': np.float64(43302.50995177509), 'oem_position': array([-5321.65992236, -2709.98964902, -3149.34485006]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 113 at 2025-09-12 22:15:05.046382+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(46.04734397714082), 'error_m': np.float64(46047.34397714082), 'oem_position': array([-5318.49376165, -2738.46397534, -3124.03768262]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 114 at 2025-09-12 22:15:10.050840+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(48.57720391351715), 'error_m': np.float64(48577.20391351715), 'oem_position': array([-5315.32804818, -2766.93427954, -3098.73408992]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 115 at 2025-09-12 22:15:15.055113+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(50.89209507820252), 'error_m': np.float64(50892.095078202525), 'oem_position': array([-5312.16245173, -2795.40353128, -3073.43143262]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 116 at 2025-09-12 22:15:20.059774+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(52.99203435136656), 'error_m': np.float64(52992.034351366565), 'oem_position': array([-5308.99660984, -2823.87499035, -3048.12681351]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 117 at 2025-09-12 22:15:25.064488+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(54.87667382500112), 'error_m': np.float64(54876.67382500112), 'oem_position': array([-5305.83073442, -2852.34675093, -3022.82192642]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 118 at 2025-09-12 22:15:30.069552+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(56.54596081825194), 'error_m': np.float64(56545.960818251944), 'oem_position': array([-5302.6646376 , -2880.82050266, -2997.51526966]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 119 at 2025-09-12 22:15:35.074499+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(57.99961600802443), 'error_m': np.float64(57999.61600802443), 'oem_position': array([-5299.4986148 , -2909.29358878, -2972.20920448]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 120 at 2025-09-12 22:15:40.081551+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(59.238070654088624), 'error_m': np.float64(59238.070654088624), 'oem_position': array([-5296.33126041, -2937.77865021, -2946.89249597]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 121 at 2025-09-12 22:15:45.086274+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.26995367777859), 'error_m': np.float64(60269.95367777859), 'oem_position': array([-5293.1653793 , -2966.250462  , -2921.58756338]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 122 at 2025-09-12 22:15:50.091157+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.076405051441334), 'error_m': np.float64(61076.40505144133), 'oem_position': array([-5289.99939698, -2994.72318402, -2896.28182179]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 123 at 2025-09-12 22:15:55.102542+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.66765377283871), 'error_m': np.float64(61667.65377283871), 'oem_position': array([-5286.82930163, -3023.23289584, -2870.94320472]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 124 at 2025-09-12 22:16:00.109560+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.04224972481002), 'error_m': np.float64(62042.24972481002), 'oem_position': array([-5283.66196875, -3051.71776386, -2845.62666812]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 125 at 2025-09-12 22:16:05.115682+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.20077347459422), 'error_m': np.float64(62200.77347459422), 'oem_position': array([-5280.49520267, -3080.19753453, -2820.31466189]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 126 at 2025-09-12 22:16:10.121890+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(62.143297849823774), 'error_m': np.float64(62143.29784982377), 'oem_position': array([-5277.32838218, -3108.67779447, -2795.00222082]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 127 at 2025-09-12 22:16:15.126416+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.86994460646606), 'error_m': np.float64(61869.944606466066), 'oem_position': array([-5274.16262569, -3137.14848552, -2769.6982843 ]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 128 at 2025-09-12 22:16:20.132545+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(61.38054655687999), 'error_m': np.float64(61380.54655687999), 'oem_position': array([-5270.99585517, -3165.62829602, -2744.38624268]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 129 at 2025-09-12 22:16:25.139350+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(60.675063382740625), 'error_m': np.float64(60675.06338274063), 'oem_position': array([-5267.82865703, -3194.11195228, -2719.07078305]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 130 at 2025-09-12 22:16:30.143541+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(59.75411084514108), 'error_m': np.float64(59754.11084514108), 'oem_position': array([-5264.66311246, -3222.58073752, -2693.76854036]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 131 at 2025-09-12 22:16:35.147764+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(58.61740737379427), 'error_m': np.float64(58617.407373794274), 'oem_position': array([-5261.49754764, -3251.04970481, -2668.46613588]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 132 at 2025-09-12 22:16:40.152067+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(57.264986733119216), 'error_m': np.float64(57264.986733119214), 'oem_position': array([-5258.33193221, -3279.51912722, -2643.16332689]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 133 at 2025-09-12 22:16:45.185466+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(55.68718637379848), 'error_m': np.float64(55687.18637379848), 'oem_position': array([-5255.14791127, -3308.15407644, -2617.71340241]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 134 at 2025-09-12 22:16:50.200683+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(53.89820873965821), 'error_m': np.float64(53898.20873965821), 'oem_position': array([-5251.97539188, -3336.68558847, -2592.35540994]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 135 at 2025-09-12 22:16:55.208240+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(51.89609088652223), 'error_m': np.float64(51896.09088652223), 'oem_position': array([-5248.80771805, -3365.17352284, -2567.03614805]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 136 at 2025-09-12 22:17:00.215746+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(49.67844006784409), 'error_m': np.float64(49678.440067844094), 'oem_position': array([-5245.64007647, -3393.66116708, -2541.71714402]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 137 at 2025-09-12 22:17:05.224591+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(47.24475686731644), 'error_m': np.float64(47244.75686731644), 'oem_position': array([-5242.47158787, -3422.15642888, -2516.39136972]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+📍 Tracking step 138 at 2025-09-12 22:17:10.278676+00:00
+✅ Got tracking result: OEM validation = {'error_km': np.float64(44.57096898104005), 'error_m': np.float64(44570.96898104005), 'oem_position': array([-5239.27448141, -3450.90906051, -2490.83685247]), 'time_diff_sec': 0.0, 'within_tolerance': np.False_, 'interpolated': True}
+🏁 Tracking completed. Processed 138 steps.
