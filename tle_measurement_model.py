@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from datetime import datetime, timedelta
 import logging
 from dataclasses import dataclass

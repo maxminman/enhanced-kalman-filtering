@@ -477,7 +477,7 @@ def display_validation_results():
         if 'errors' in hist_data and len(hist_data['errors']) > 0:
             fig = px.histogram(
                 x=hist_data['errors'],
-                bins=50,
+                nbins=50,
                 title="Error Distribution",
                 labels={'x': 'Position Error (m)', 'y': 'Frequency'}
             )
