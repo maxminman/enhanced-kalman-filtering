@@ -2,9 +2,6 @@
 
 True EKF Satellite Tracker is a Python-based satellite tracking system that implements an Extended Kalman Filter (EKF) for real-time satellite trajectory prediction. The system compares EKF predictions against SGP4 model calculations and NASA OEM (Orbital Ephemeris Message) data to provide accuracy validation. It features an interactive Streamlit dashboard for visualizing satellite trajectories, orbital mechanics calculations with J2 perturbations, and coordinate transformations between different reference frames (ECI, ECEF, Geodetic).
 
-# User Preferences
-
-Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
