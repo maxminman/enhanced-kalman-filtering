@@ -296,8 +296,8 @@ class TLEMeasurementModel:
                       current_time.hour, current_time.minute, current_time.second)
             
             geocentric = satellite.at(t)
-            position = geocentric.position.km * 1000  # Convert to meters
-            velocity = geocentric.velocity.km_per_s * 1000  # Convert to m/s
+            position = np.array(geocentric.position.km) * 1000  # Convert to meters
+            velocity = np.array(geocentric.velocity.km_per_s) * 1000  # Convert to m/s
             
             return np.concatenate([position, velocity])
             

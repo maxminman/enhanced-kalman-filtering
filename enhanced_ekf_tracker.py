@@ -382,7 +382,7 @@ class EnhancedEKFTracker:
                 self.tle_data, current_time
             )
             
-            if measurement is None:
+            if measurement is None or R is None:
                 # Use current state estimate as measurement with high uncertainty
                 measurement = self.state[:6].copy()
                 R = np.eye(6) * 10000**2  # 10km uncertainty
