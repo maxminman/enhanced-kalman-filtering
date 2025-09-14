@@ -159,7 +159,7 @@ class RTSSmoother:
             
             # Apply to each spatial dimension
             for i in range(3):
-                Q[i:7:3, i:7:3] = Q_pos_vel
+                Q[i:6:3, i:6:3] = Q_pos_vel
             
             # Parameter process noise
             Q[6, 6] = (0.01 * dt)**2  # CdA
