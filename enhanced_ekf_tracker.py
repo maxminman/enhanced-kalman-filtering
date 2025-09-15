@@ -367,6 +367,59 @@ class EnhancedEKFTracker:
         
         return Q
     
+    def _should_apply_tle_update(self, current_time: datetime) -> bool:
+        """
+        Determine if TLE measurement should be applied (conservative strategy)
+        
+        Only use TLE measurements:
+        1. When filter confidence is low (large uncertainty)
+        2. At large time intervals (avoid bias accumulation) 
+        3. When close to TLE epoch (SGP4 most accurate)
+        4. When filter divergence is detected
+        
+        Returns:
+            bool: True if TLE measurement should be applied
+        """
+        try:
+            # Calculate time since TLE epoch
+            tle_age = (current_time - self.tle_data.epoch_datetime).total_seconds() / 3600  # hours
+            
+            # 1. Only apply if TLE is relatively fresh (< 48 hours old)
+            if tle_age > 48:
+                return False
+            
+            # 2. Apply only every N iterations to reduce bias accumulation
+            update_interval = 30  # Only every 30th update (~5 minutes at 10s intervals)
+            if self.iteration_count % update_interval != 0:
+                return False
+            
+            # 3. Don't apply if filter is very confident (small position uncertainty)
+            position_uncertainty = np.sqrt(np.trace(self.P[:3, :3]))  # meters
+            if position_uncertainty < 100:  # Very confident
+                return False
+                
+            # 4. Always apply if filter divergence detected
+            if self.divergence_count > 2:
+                self.logger.info(f"Applying TLE update due to divergence (count: {self.divergence_count})")
+                return True
+            
+            # 5. Apply if close to TLE epoch (SGP4 most accurate)
+            if tle_age < 6:  # Within 6 hours of TLE epoch
+                self.logger.info(f"Applying TLE update - close to epoch (age: {tle_age:.1f}h)")
+                return True
+            
+            # 6. Apply if filter uncertainty is high
+            if position_uncertainty > 5000:  # Uncertainty > 5km
+                self.logger.info(f"Applying TLE update - high uncertainty ({position_uncertainty:.0f}m)")
+                return True
+                
+            # Otherwise, skip TLE measurement to avoid bias
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"Error in TLE update decision: {e}")
+            return False  # Default to no update on error
+    
     def update(self, current_time: datetime) -> Optional[Dict[str, Any]]:
         """Update step with TLE-derived measurements"""
         try:
@@ -377,19 +430,24 @@ class EnhancedEKFTracker:
             # Prediction step
             self.predict(dt)
             
-            # Generate synthetic measurement from current TLE
-            # In practice, this would be a new TLE observation
-            measurement, R = self.measurement_model.generate_measurement(
-                self.tle_data, current_time
-            )
+            # CONSERVATIVE UPDATE STRATEGY: Only use TLE measurements occasionally
+            # to avoid bias accumulation from comparing filter vs SGP4 propagation
+            should_use_tle_measurement = self._should_apply_tle_update(current_time)
             
-            if measurement is None or R is None:
-                # Use current state estimate as measurement with high uncertainty
-                measurement = self.state[:6].copy()
-                R = np.eye(6) * 10000**2  # 10km uncertainty
-            
-            # Measurement update
-            self._measurement_update(measurement, R)
+            if should_use_tle_measurement:
+                # Generate TLE-based calibration measurement
+                measurement, R = self.measurement_model.generate_measurement(
+                    self.tle_data, current_time
+                )
+                
+                if measurement is not None and R is not None:
+                    self.logger.info(f"Applying TLE calibration measurement")
+                    self._measurement_update(measurement, R)
+                else:
+                    self.logger.warning("TLE measurement generation failed, skipping update")
+            else:
+                # No measurement update - just propagate with prediction only
+                self.logger.debug("Skipping TLE measurement - prediction only")
             
             # Batch parameter estimation (periodic)
             if (self.batch_estimator and 

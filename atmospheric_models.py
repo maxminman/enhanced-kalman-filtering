@@ -9,19 +9,29 @@ class NRLMSISE00:
     with space weather integration for accurate drag modeling
     """
     
+    _instance = None
+    _initialized = False
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(NRLMSISE00, cls).__new__(cls)
+        return cls._instance
+    
     def __init__(self):
         """Initialize NRLMSISE-00 model"""
-        self.logger = logging.getLogger(__name__)
-        
-        # Model constants
-        self.R_earth = 6371.0  # km
-        self.scale_height_base = 8.5  # km
-        
-        # Default space weather parameters
-        self.default_f107 = 150.0  # Solar flux (10.7 cm)
-        self.default_kp = 3.0      # Geomagnetic index
-        
-        self.logger.info("NRLMSISE-00 atmospheric model initialized")
+        if not self._initialized:
+            self.logger = logging.getLogger(__name__)
+            
+            # Model constants
+            self.R_earth = 6371.0  # km
+            self.scale_height_base = 8.5  # km
+            
+            # Default space weather parameters
+            self.default_f107 = 150.0  # Solar flux (10.7 cm)
+            self.default_kp = 3.0      # Geomagnetic index
+            
+            self.logger.info("NRLMSISE-00 atmospheric model initialized")
+            NRLMSISE00._initialized = True
     
     def get_density(self, altitude_km: float, latitude: float, longitude: float, 
                    datetime_utc: datetime, f107: float = None, 
