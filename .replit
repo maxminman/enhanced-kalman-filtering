@@ -1,9 +1,10 @@
-modules = ["python-3.11"]
+modules = ["python-3.11", "python3"]
 [agent]
 expertMode = true
 
 [nix]
 channel = "stable-25_05"
+packages = ["glibcLocales", "libxcrypt", "pkg-config", "xsimd"]
 
 [workflows]
 runButton = "Project"
@@ -34,5 +35,5 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 45993
+localPort = 39095
 externalPort = 3000

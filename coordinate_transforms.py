@@ -1,7 +1,13 @@
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Optional
 from datetime import datetime
 import math
+try:
+    from skyfield.api import load, utc
+    from skyfield.earthlib import earth_rotation_angle
+    SKYFIELD_AVAILABLE = True
+except ImportError:
+    SKYFIELD_AVAILABLE = False
 
 class CoordinateTransforms:
     """
@@ -20,8 +26,27 @@ class CoordinateTransforms:
         # Earth rotation rate
         self.omega_earth = 7.2921159e-5  # rad/s
         
+        # Earth orientation parameters (simplified - real implementation would use IERS data)
+        self.x_pole = 0.0  # arcsec
+        self.y_pole = 0.0  # arcsec  
+        self.dut1 = 0.0    # seconds
+        
+        # Initialize time scale if available
+        if SKYFIELD_AVAILABLE:
+            try:
+                self.ts = load.timescale()
+            except:
+                self.ts = None
+        else:
+            self.ts = None
+        
         # Gravitational parameter
         self.mu = 3.986004418e14  # m^3/s^2
+        
+        # Constants for improved time and coordinate transformations
+        self.j2000_epoch = 2451545.0  # Julian date of J2000.0
+        self.seconds_per_day = 86400.0
+        self.arcsec_to_rad = 4.84813681109536e-6  # Convert arcseconds to radians
     
     def eci_to_ecef(self, position_eci: np.ndarray, velocity_eci: np.ndarray, 
                    datetime_utc: datetime) -> Tuple[np.ndarray, np.ndarray]:
@@ -189,7 +214,7 @@ class CoordinateTransforms:
     
     def _greenwich_mean_sidereal_time(self, datetime_utc: datetime) -> float:
         """
-        Calculate Greenwich Mean Sidereal Time
+        Calculate enhanced Greenwich Mean Sidereal Time with higher accuracy
         
         Args:
             datetime_utc: UTC datetime
@@ -197,17 +222,40 @@ class CoordinateTransforms:
         Returns:
             GMST in radians
         """
-        # Julian date
+        if SKYFIELD_AVAILABLE and self.ts is not None:
+            # Use Skyfield for highest accuracy
+            try:
+                t = self.ts.from_datetime(datetime_utc.replace(tzinfo=utc))
+                # Get Earth rotation angle (more accurate than GMST for modern applications)
+                era = earth_rotation_angle(t.tt)
+                return era
+            except:
+                pass  # Fall back to analytical calculation
+        
+        # Analytical GMST calculation (IAU 2000 model)
         jd = self._julian_date(datetime_utc)
         
-        # Centuries since J2000.0
-        T = (jd - 2451545.0) / 36525.0
+        # Modified Julian Date
+        mjd = jd - 2400000.5
         
-        # GMST in seconds
-        gmst_sec = (67310.54841 + 
-                   (876600.0 * 3600.0 + 8640184.812866) * T +
-                   0.093104 * T**2 - 
-                   6.2e-6 * T**3)
+        # Centuries since J2000.0
+        T = (jd - self.j2000_epoch) / 36525.0
+        
+        # GMST at 0h UT (IAU 2000 model)
+        gmst0 = (24110.54841 + 
+                8640184.812866 * T +
+                0.093104 * T**2 - 
+                6.2e-6 * T**3)
+        
+        # Add contribution from fraction of day
+        ut_hours = (datetime_utc.hour + 
+                   datetime_utc.minute / 60.0 + 
+                   (datetime_utc.second + datetime_utc.microsecond / 1e6) / 3600.0)
+        
+        # Earth rotation rate (slightly faster than uniform)
+        rate = 1.00273790935 + 5.9e-11 * T  # ratio of sidereal to solar day
+        
+        gmst_sec = gmst0 + ut_hours * 3600.0 * rate
         
         # Convert to radians and normalize
         gmst_rad = np.radians(gmst_sec / 240.0)  # 240 sec = 1 degree
@@ -245,6 +293,104 @@ class CoordinateTransforms:
               (hour + minute / 60.0 + second / 3600.0) / 24.0)
         
         return jd
+    
+    def enhanced_eci_to_ecef(self, position_eci: np.ndarray, velocity_eci: np.ndarray, 
+                            datetime_utc: datetime, use_polar_motion: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Enhanced ECI to ECEF transformation with Earth orientation effects
+        
+        Args:
+            position_eci: Position vector in True Equator and Equinox of Date (TEME) frame (m)
+            velocity_eci: Velocity vector in TEME frame (m/s)
+            datetime_utc: UTC datetime
+            use_polar_motion: Include polar motion corrections
+            
+        Returns:
+            Tuple of (position_ecef, velocity_ecef)
+        """
+        # Get enhanced rotation matrix including Earth orientation effects
+        R_total, R_dot = self._get_eci_to_ecef_matrix(datetime_utc, use_polar_motion)
+        
+        # Transform position
+        position_ecef = R_total @ position_eci
+        
+        # Transform velocity (including Earth rotation rate effects)
+        velocity_ecef = R_total @ velocity_eci + R_dot @ position_eci
+        
+        return position_ecef, velocity_ecef
+    
+    def _get_eci_to_ecef_matrix(self, datetime_utc: datetime, 
+                               use_polar_motion: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Compute enhanced ECI to ECEF transformation matrix with Earth orientation effects
+        
+        Returns:
+            Tuple of (rotation_matrix, rotation_rate_matrix)
+        """
+        # Enhanced GMST
+        gmst = self._greenwich_mean_sidereal_time(datetime_utc)
+        
+        # Basic rotation matrix from ECI to ECEF
+        cos_gmst = np.cos(gmst)
+        sin_gmst = np.sin(gmst)
+        
+        R_basic = np.array([
+            [cos_gmst, sin_gmst, 0],
+            [-sin_gmst, cos_gmst, 0],
+            [0, 0, 1]
+        ])
+        
+        # Earth rotation rate matrix
+        R_dot = np.array([
+            [-sin_gmst, cos_gmst, 0],
+            [-cos_gmst, -sin_gmst, 0],
+            [0, 0, 0]
+        ]) * self.omega_earth
+        
+        if use_polar_motion:
+            # Apply polar motion corrections (simplified - real implementation would use IERS data)
+            W = self._polar_motion_matrix(datetime_utc)
+            R_total = W @ R_basic
+            R_dot = W @ R_dot
+        else:
+            R_total = R_basic
+        
+        return R_total, R_dot
+    
+    def _polar_motion_matrix(self, datetime_utc: datetime) -> np.ndarray:
+        """
+        Compute polar motion matrix (simplified implementation)
+        Real implementation would use IERS Bulletin A data
+        
+        Returns:
+            3x3 polar motion matrix
+        """
+        # Convert simplified pole coordinates to radians
+        x_p = self.x_pole * self.arcsec_to_rad
+        y_p = self.y_pole * self.arcsec_to_rad
+        
+        # Polar motion matrix (IAU 1980 model, simplified)
+        W = np.array([
+            [np.cos(x_p), 0, -np.sin(x_p)],
+            [np.sin(x_p)*np.sin(y_p), np.cos(y_p), np.cos(x_p)*np.sin(y_p)],
+            [np.sin(x_p)*np.cos(y_p), -np.sin(y_p), np.cos(x_p)*np.cos(y_p)]
+        ])
+        
+        return W
+    
+    def update_earth_orientation_parameters(self, x_pole: float, y_pole: float, 
+                                          dut1: float) -> None:
+        """
+        Update Earth orientation parameters
+        
+        Args:
+            x_pole: X pole coordinate (arcseconds)
+            y_pole: Y pole coordinate (arcseconds)  
+            dut1: UT1-UTC difference (seconds)
+        """
+        self.x_pole = x_pole
+        self.y_pole = y_pole
+        self.dut1 = dut1
     
     def cartesian_to_keplerian(self, position: np.ndarray, 
                              velocity: np.ndarray) -> dict:
