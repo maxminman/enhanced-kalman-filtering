@@ -62,8 +62,8 @@ class ValidationFramework:
         """
         try:
             if oem_file_path is None:
-                # Use the attached ISS OEM data
-                oem_file_path = "data/iss_oem_data.txt"
+                # Use the latest NASA ISS OEM data
+                oem_file_path = "data/iss_nasa_oem_latest.txt"
             
             if not os.path.exists(oem_file_path):
                 self.logger.error(f"OEM file not found: {oem_file_path}")

@@ -151,7 +151,7 @@ def main():
                 if len(st.session_state.tracking_data) > 0:
                     with st.spinner("Running validation against OEM data..."):
                         validator = ValidationFramework()
-                        if validator.load_oem_data("data/iss_oem_data.txt"):
+                        if validator.load_oem_data("data/iss_nasa_oem_latest.txt"):
                             results = validator.validate_tracking_data(
                                 st.session_state.tracking_data
                             )
