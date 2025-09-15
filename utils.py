@@ -5,6 +5,22 @@ from datetime import datetime, timedelta
 import logging
 import os
 import re
+from dataclasses import dataclass
+
+@dataclass
+class TLEData:
+    """TLE (Two-Line Element) data structure"""
+    epoch_year: int
+    epoch_day: float
+    epoch_datetime: datetime
+    inclination: float  # degrees
+    raan: float  # degrees
+    eccentricity: float
+    arg_perigee: float  # degrees
+    mean_anomaly: float  # degrees
+    mean_motion: float  # revolutions per day
+    line1: str
+    line2: str
 
 def julian_date(dt: datetime) -> float:
     """
@@ -118,7 +134,7 @@ def format_time(dt: datetime, format_type: str = 'iso') -> str:
     else:
         return str(dt)
 
-def parse_tle(line1: str, line2: str) -> Dict[str, Any]:
+def parse_tle(line1: str, line2: str) -> TLEData:
     """
     Parse TLE (Two-Line Element) data
     
@@ -151,19 +167,19 @@ def parse_tle(line1: str, line2: str) -> Dict[str, Any]:
         # Calculate epoch datetime
         epoch_datetime = datetime(epoch_year, 1, 1) + timedelta(days=epoch_day - 1)
         
-        return {
-            'epoch_year': epoch_year,
-            'epoch_day': epoch_day,
-            'epoch_datetime': epoch_datetime,
-            'inclination': inclination,
-            'raan': raan,
-            'eccentricity': eccentricity,
-            'arg_perigee': arg_perigee,
-            'mean_anomaly': mean_anomaly,
-            'mean_motion': mean_motion,
-            'line1': line1,
-            'line2': line2
-        }
+        return TLEData(
+            epoch_year=epoch_year,
+            epoch_day=epoch_day,
+            epoch_datetime=epoch_datetime,
+            inclination=inclination,
+            raan=raan,
+            eccentricity=eccentricity,
+            arg_perigee=arg_perigee,
+            mean_anomaly=mean_anomaly,
+            mean_motion=mean_motion,
+            line1=line1,
+            line2=line2
+        )
         
     except Exception as e:
         logging.error(f"TLE parsing error: {e}")

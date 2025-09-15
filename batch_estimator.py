@@ -196,7 +196,7 @@ class BatchEstimator:
                 residual_function,
                 initial_params,
                 bounds=bounds,
-                method='lm',  # Levenberg-Marquardt
+                method='trf',  # Trust Region Reflective (supports bounds)
                 max_nfev=100,
                 ftol=1e-8,
                 xtol=1e-8
