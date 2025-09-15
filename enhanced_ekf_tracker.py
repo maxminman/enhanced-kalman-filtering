@@ -40,14 +40,14 @@ class EnhancedEKFTracker:
         self.tle_data = parse_tle(tle_line1, tle_line2)
         self.initial_state = self._tle_to_state_vector(self.tle_data)
         
-        # Initialize state vector [x, y, z, vx, vy, vz, CdA, Cr, along_track_accel]
-        self.state_dim = 9  # Position, velocity, drag coeff, SRP coeff, empirical accel
+        # Initialize state vector [x, y, z, vx, vy, vz, Bc, Cr, along_track_accel]
+        self.state_dim = 9  # Position, velocity, ballistic coeff, SRP coeff, empirical accel
         self.obs_dim = 6    # Position and velocity observations from TLE
         
-        # State: [position(3), velocity(3), CdA(1), Cr(1), along_track_accel(1)]
+        # State: [position(3), velocity(3), Bc(1), Cr(1), along_track_accel(1)]
         self.state = np.zeros(self.state_dim)
         self.state[:6] = self.initial_state[:6]  # Position and velocity
-        self.state[6] = config.get('drag_coeff', 2.2)  # CdA
+        self.state[6] = config.get('ballistic_coeff', 0.00540)  # Bc (m^2/kg)
         self.state[7] = config.get('srp_coeff', 1.3)   # Cr
         self.state[8] = 0.0  # Along-track empirical acceleration
         
@@ -215,8 +215,8 @@ class EnhancedEKFTracker:
         # Velocity uncertainty (m/s)^2
         self.P[3:6, 3:6] *= (10)**2  # 10 m/s initial velocity uncertainty
         
-        # CdA uncertainty
-        self.P[6, 6] = (0.5)**2  # 50% uncertainty in drag coefficient
+        # Bc uncertainty
+        self.P[6, 6] = (0.002)**2  # Ballistic coefficient uncertainty (m^2/kg)^2
         
         # Cr uncertainty  
         self.P[7, 7] = (0.3)**2  # 30% uncertainty in SRP coefficient
@@ -230,7 +230,7 @@ class EnhancedEKFTracker:
         self.state[:6] = self._propagate_orbit(self.state[:6], dt)
         
         # Parameter evolution (slow states)
-        # CdA and Cr evolve slowly with small random walk
+        # Bc and Cr evolve slowly with small random walk
         # Along-track acceleration remains constant
         
         # Compute state transition matrix F
@@ -361,7 +361,7 @@ class EnhancedEKFTracker:
             Q[i:6:3, i:6:3] = Q_pos_vel
         
         # Parameter process noise (random walk)
-        Q[6, 6] = (0.01 * dt)**2  # CdA random walk
+        Q[6, 6] = (1e-6 * dt)**2  # Bc random walk (m^2/kg)^2
         Q[7, 7] = (0.005 * dt)**2  # Cr random walk
         Q[8, 8] = (1e-8 * dt)**2  # Along-track acceleration random walk
         
@@ -458,7 +458,7 @@ class EnhancedEKFTracker:
                     updated_params = self.batch_estimator.estimate_parameters(
                         self.measurement_history, self.state_history
                     )
-                    self.state[6:8] = updated_params[:2]  # Update CdA and Cr
+                    self.state[6:8] = updated_params[:2]  # Update Bc and Cr
                 except Exception as e:
                     self.logger.warning(f"Batch estimation failed: {e}")
             
@@ -611,7 +611,7 @@ class EnhancedEKFTracker:
             'longitude': lon,
             'altitude': altitude,
             'velocity_magnitude': velocity_magnitude,
-            'drag_coeff': self.state[6],
+            'ballistic_coeff': self.state[6],
             'srp_coeff': self.state[7],
             'along_track_accel': self.state[8],
             'covariance_trace': np.trace(self.P),

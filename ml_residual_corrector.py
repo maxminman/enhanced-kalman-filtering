@@ -53,7 +53,7 @@ class MLResidualCorrector:
         Extract features for ML model from current state and history
         
         Args:
-            state: Current state vector [position, velocity, CdA, Cr, empirical_accel]
+            state: Current state vector [position, velocity, Bc, Cr, empirical_accel]
             innovation_history: Recent innovation vectors
             additional_context: Additional context information
             
@@ -106,8 +106,8 @@ class MLResidualCorrector:
             # Current estimated parameters
             if len(state) > 6:
                 features.extend([
-                    state[6] / 3.0,   # Normalized CdA
-                    state[7] / 2.0,   # Normalized Cr
+                    state[6] / 0.010,  # Normalized Bc (ballistic coefficient)
+                    state[7] / 2.0,    # Normalized Cr
                 ])
                 if len(state) > 8:
                     features.append(state[8] * 1e6)  # Scaled empirical acceleration

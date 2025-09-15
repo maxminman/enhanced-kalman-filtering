@@ -31,6 +31,8 @@ class ForceModels:
         # Atmospheric drag parameters
         self.default_cd = 2.2  # Drag coefficient
         self.default_area = 1140.23  # m^2 - ISS drag area
+        self.default_mass = 464291.0  # kg - ISS mass
+        self.default_bc = self.default_cd * self.default_area / self.default_mass  # m^2/kg - ISS ballistic coefficient
         
         # Solar radiation pressure parameters
         self.default_cr = 1.3  # SRP coefficient
@@ -61,7 +63,7 @@ class ForceModels:
         self.logger.info("Enhanced force models initialized with JPL ephemeris and improved geopotential")
     
     def compute_perturbations(self, position: np.ndarray, velocity: np.ndarray,
-                            datetime_utc: datetime, cd_a: float = None,
+                            datetime_utc: datetime, bc: float = None,
                             cr_a: float = None) -> np.ndarray:
         """
         Compute total perturbation accelerations
@@ -70,7 +72,7 @@ class ForceModels:
             position: Position vector in ECI frame (m)
             velocity: Velocity vector in ECI frame (m/s)
             datetime_utc: Current UTC time
-            cd_a: Drag coefficient times area (m^2)
+            bc: Ballistic coefficient Cd*A/m (m^2/kg)
             cr_a: SRP coefficient times area (m^2)
             
         Returns:
@@ -87,7 +89,7 @@ class ForceModels:
             # Atmospheric drag
             if self.config.get('use_drag', True):
                 accel_drag = self._compute_atmospheric_drag(
-                    position, velocity, datetime_utc, cd_a
+                    position, velocity, datetime_utc, bc
                 )
                 total_accel += accel_drag
             
@@ -239,8 +241,8 @@ class ForceModels:
         self.logger.info("Enhanced geopotential coefficients initialized (4x4 EGM2008 subset)")
     
     def _compute_atmospheric_drag(self, position: np.ndarray, velocity: np.ndarray,
-                                datetime_utc: datetime, cd_a: float = None) -> np.ndarray:
-        """Compute atmospheric drag acceleration"""
+                                datetime_utc: datetime, bc: float = None) -> np.ndarray:
+        """Compute atmospheric drag acceleration using ballistic coefficient"""
         try:
             # Get atmospheric density
             from atmospheric_models import NRLMSISE00
@@ -267,18 +269,16 @@ class ForceModels:
             if v_rel_mag == 0:
                 return np.zeros(3)
             
-            # Drag coefficient and area
-            if cd_a is None:
-                cd_a = self.default_cd * self.default_area
+            # Ballistic coefficient (Cd * A / m)
+            if bc is None:
+                bc = self.default_bc
             
-            # Drag acceleration
-            drag_accel = -0.5 * rho * cd_a * v_rel_mag * v_rel
+            # Drag acceleration (specific force)
+            # Using ballistic coefficient: F_drag = -0.5 * rho * Bc * v^2
+            # Since Bc = Cd*A/m, the mass division is already included
+            drag_accel = -0.5 * rho * bc * v_rel_mag * v_rel
             
-            # Divide by satellite mass (assume 1 kg for specific acceleration)
-            # In practice, this would be scaled by actual mass
-            mass = self.config.get('satellite_mass', 464291.0)  # ISS mass in kg
-            
-            return drag_accel / mass
+            return drag_accel
             
         except Exception as e:
             self.logger.error(f"Drag computation error: {e}")

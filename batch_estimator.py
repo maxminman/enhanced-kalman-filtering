@@ -18,7 +18,7 @@ class BatchEstimationResult:
 class BatchEstimator:
     """
     Sliding-window batch parameter estimation using Levenberg-Marquardt
-    for robust identification of drag coefficient (CdA) and SRP coefficient (Cr)
+    for robust identification of ballistic coefficient (Bc) and SRP coefficient (Cr)
     """
     
     def __init__(self, config: Dict[str, Any]):
@@ -32,7 +32,7 @@ class BatchEstimator:
         
         # Parameter bounds
         self.param_bounds = {
-            'cd_a': (0.5, 5.0),     # Drag coefficient bounds
+            'bc': (0.001, 0.010),   # Ballistic coefficient bounds (m^2/kg)
             'cr_a': (0.5, 2.5),     # SRP coefficient bounds
             'empirical': (-1e-5, 1e-5)  # Along-track acceleration bounds
         }
@@ -52,12 +52,12 @@ class BatchEstimator:
             state_history: List of state vectors
             
         Returns:
-            Estimated parameters [CdA, Cr, along_track_accel]
+            Estimated parameters [Bc, Cr, along_track_accel]
         """
         try:
             if len(measurement_history) < self.window_size:
                 self.logger.debug("Insufficient data for batch estimation")
-                return np.array([self.config.get('drag_coeff', 2.2),
+                return np.array([self.config.get('ballistic_coeff', 0.00540),
                                self.config.get('srp_coeff', 1.3),
                                0.0])
             
@@ -72,16 +72,16 @@ class BatchEstimator:
             
             # Initial parameter guess
             initial_params = np.array([
-                self.config.get('drag_coeff', 2.2),
+                self.config.get('ballistic_coeff', 0.00540),
                 self.config.get('srp_coeff', 1.3),
                 0.0  # Along-track acceleration
             ])
             
             # Parameter bounds for optimization
             bounds = (
-                [self.param_bounds['cd_a'][0], self.param_bounds['cr_a'][0], 
+                [self.param_bounds['bc'][0], self.param_bounds['cr_a'][0], 
                  self.param_bounds['empirical'][0]],
-                [self.param_bounds['cd_a'][1], self.param_bounds['cr_a'][1], 
+                [self.param_bounds['bc'][1], self.param_bounds['cr_a'][1], 
                  self.param_bounds['empirical'][1]]
             )
             
@@ -104,7 +104,7 @@ class BatchEstimator:
                 if len(self.estimation_history) > 100:
                     self.estimation_history = self.estimation_history[-100:]
                 
-                self.logger.debug(f"Batch estimation successful: CdA={result.parameters[0]:.3f}, "
+                self.logger.debug(f"Batch estimation successful: Bc={result.parameters[0]:.6f}, "
                                 f"Cr={result.parameters[1]:.3f}, empirical={result.parameters[2]:.2e}")
                 
                 return result.parameters
@@ -115,7 +115,7 @@ class BatchEstimator:
         except Exception as e:
             self.logger.error(f"Batch estimation error: {e}")
             # Return default parameters
-            return np.array([self.config.get('drag_coeff', 2.2),
+            return np.array([self.config.get('ballistic_coeff', 0.00540),
                            self.config.get('srp_coeff', 1.3),
                            0.0])
     
@@ -298,7 +298,7 @@ class BatchEstimator:
             params_array = np.array([est['parameters'] for est in self.estimation_history])
             
             stats = {
-                'cd_a': {
+                'bc': {
                     'mean': np.mean(params_array[:, 0]),
                     'std': np.std(params_array[:, 0]),
                     'min': np.min(params_array[:, 0]),
@@ -334,7 +334,7 @@ class BatchEstimator:
             return False
         
         try:
-            param_index = {'cd_a': 0, 'cr_a': 1, 'empirical': 2}[param_name]
+            param_index = {'bc': 0, 'cr_a': 1, 'empirical': 2}[param_name]
             recent_params = [est['parameters'][param_index] for est in self.estimation_history[-5:]]
             
             # Coefficient of variation

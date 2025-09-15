@@ -66,7 +66,7 @@ def main():
         
         # EKF Configuration
         st.subheader("EKF Parameters")
-        drag_coeff = st.slider("Drag Coefficient (CdA)", 0.5, 5.0, 2.2, 0.1)
+        ballistic_coeff = st.slider("Ballistic Coefficient (Bc)", 0.001, 0.010, 0.00540, 0.0001)
         srp_coeff = st.slider("SRP Coefficient (Cr)", 0.5, 2.5, 1.3, 0.1)
         process_noise = st.slider("Process Noise Scale", 0.1, 10.0, 1.0, 0.1)
         
@@ -112,7 +112,7 @@ def main():
                     try:
                         # Initialize tracker
                         config = {
-                            'drag_coeff': drag_coeff,
+                            'ballistic_coeff': ballistic_coeff,
                             'srp_coeff': srp_coeff,
                             'process_noise_scale': process_noise,
                             'use_j2_j6': use_j2_j6,
@@ -242,7 +242,7 @@ def display_tracking_results(result):
         st.metric("Longitude (°)", f"{result['longitude']:.4f}")
     
     with col3:
-        st.metric("Drag Coeff", f"{result['drag_coeff']:.3f}")
+        st.metric("Ballistic Coeff", f"{result['ballistic_coeff']:.6f}")
         st.metric("SRP Coeff", f"{result['srp_coeff']:.3f}")
 
 def display_tracking_plots():
@@ -332,9 +332,9 @@ def display_tracking_plots():
         
         fig.add_trace(go.Scatter(
             x=df['timestamp'],
-            y=df['drag_coeff'],
+            y=df['ballistic_coeff'],
             mode='lines',
-            name='Drag Coefficient',
+            name='Ballistic Coefficient',
             line=dict(color='green')
         ))
         
@@ -350,7 +350,7 @@ def display_tracking_plots():
         fig.update_layout(
             title="Parameter Evolution",
             xaxis_title="Time",
-            yaxis_title="Drag Coefficient",
+            yaxis_title="Ballistic Coefficient",
             yaxis2=dict(
                 title="SRP Coefficient",
                 overlaying='y',
