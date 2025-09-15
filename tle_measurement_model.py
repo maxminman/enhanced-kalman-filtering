@@ -149,15 +149,11 @@ class TLEMeasurementModel:
             # Return default noise matrix
             return self._default_noise_matrix()
     
-    def _calculate_tle_age(self, tle_data: Dict[str, Any], current_time: datetime) -> float:
+    def _calculate_tle_age(self, tle_data, current_time: datetime) -> float:
         """Calculate TLE age in hours"""
         try:
-            # Extract TLE epoch
-            epoch_year = tle_data['epoch_year']
-            epoch_day = tle_data['epoch_day']
-            
-            # Convert to datetime
-            tle_epoch = datetime(epoch_year, 1, 1) + timedelta(days=epoch_day - 1)
+            # Use TLE epoch directly from TLEData object
+            tle_epoch = tle_data.epoch_datetime
             
             # Calculate age
             age = current_time - tle_epoch
@@ -198,11 +194,11 @@ class TLEMeasurementModel:
             self.logger.error(f"Noise parameter lookup error: {e}")
             return 1000.0, 10.0  # Default values
     
-    def _get_altitude_factor(self, tle_data: Dict[str, Any]) -> float:
+    def _get_altitude_factor(self, tle_data) -> float:
         """Get altitude-dependent noise factor"""
         try:
             # Estimate altitude from mean motion
-            mean_motion = tle_data.get('mean_motion', 15.5)  # rev/day
+            mean_motion = tle_data.mean_motion  # rev/day
             
             # Convert to semi-major axis
             mu = 3.986004418e14  # m^3/s^2
@@ -229,11 +225,11 @@ class TLEMeasurementModel:
             self.logger.error(f"Altitude factor calculation error: {e}")
             return 1.0
     
-    def _get_orbital_dynamics_factor(self, tle_data: Dict[str, Any]) -> float:
+    def _get_orbital_dynamics_factor(self, tle_data) -> float:
         """Get factor based on orbital dynamics complexity"""
         try:
-            eccentricity = tle_data.get('eccentricity', 0.0)
-            inclination = tle_data.get('inclination', 0.0)
+            eccentricity = tle_data.eccentricity
+            inclination = tle_data.inclination
             
             # High eccentricity increases uncertainty
             ecc_factor = 1.0 + 2.0 * eccentricity
@@ -281,14 +277,14 @@ class TLEMeasurementModel:
             self.logger.error(f"Measurement generation error: {e}")
             return None, None
     
-    def _tle_to_state_vector(self, tle_data: Dict[str, Any], 
+    def _tle_to_state_vector(self, tle_data, 
                            current_time: datetime) -> Optional[np.ndarray]:
         """Convert TLE to state vector using SGP4"""
         try:
             from skyfield.api import load, EarthSatellite
             
             # Create satellite object
-            satellite = EarthSatellite(tle_data['line1'], tle_data['line2'])
+            satellite = EarthSatellite(tle_data.line1, tle_data.line2)
             
             # Get position and velocity at current time
             ts = load.timescale()
