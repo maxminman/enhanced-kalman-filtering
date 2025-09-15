@@ -619,6 +619,7 @@ dependencies = [
     { name = "requests" },
     { name = "scikit-learn" },
     { name = "scipy" },
+    { name = "sgp4" },
     { name = "skyfield" },
     { name = "streamlit" },
 ]
@@ -632,6 +633,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.5" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
     { name = "scipy", specifier = ">=1.16.2" },
+    { name = "sgp4", specifier = ">=2.25" },
     { name = "skyfield", specifier = ">=1.53" },
     { name = "streamlit", specifier = ">=1.49.1" },
 ]

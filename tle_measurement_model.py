@@ -249,7 +249,7 @@ class TLEMeasurementModel:
             self.logger.error(f"Orbital dynamics factor error: {e}")
             return 1.0
     
-    def generate_measurement(self, tle_data: Dict[str, Any], 
+    def generate_measurement(self, tle_data, 
                            current_time: datetime) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """
         Generate synthetic measurement from TLE at current time
