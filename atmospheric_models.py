@@ -30,7 +30,7 @@ class NRLMSISE00:
             self.default_f107 = 150.0  # Solar flux (10.7 cm)
             self.default_kp = 3.0      # Geomagnetic index
             
-            self.logger.info("NRLMSISE-00 atmospheric model initialized")
+            self.logger.debug("NRLMSISE-00 atmospheric model initialized")
             NRLMSISE00._initialized = True
     
     def get_density(self, altitude_km: float, latitude: float, longitude: float, 
