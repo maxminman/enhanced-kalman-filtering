@@ -24,15 +24,16 @@ class TLEMeasurementModel:
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
         
-        # Default age-to-noise mappings (empirically derived)
+        # Optimized age-to-noise mappings for sub-1km accuracy (more aggressive)
         self.age_mappings = [
-            TLEAgeMapping(1.0, 100.0, 1.0),    # Fresh TLE: 100m, 1 m/s
-            TLEAgeMapping(6.0, 200.0, 2.0),    # 6 hours: 200m, 2 m/s
-            TLEAgeMapping(12.0, 400.0, 4.0),   # 12 hours: 400m, 4 m/s
-            TLEAgeMapping(24.0, 800.0, 8.0),   # 1 day: 800m, 8 m/s
-            TLEAgeMapping(48.0, 1500.0, 15.0), # 2 days: 1.5km, 15 m/s
-            TLEAgeMapping(72.0, 2500.0, 25.0), # 3 days: 2.5km, 25 m/s
-            TLEAgeMapping(168.0, 5000.0, 50.0) # 1 week: 5km, 50 m/s
+            TLEAgeMapping(1.0, 50.0, 0.5),     # Fresh TLE: 50m, 0.5 m/s (aggressive)
+            TLEAgeMapping(3.0, 80.0, 1.0),     # 3 hours: 80m, 1 m/s
+            TLEAgeMapping(6.0, 120.0, 1.5),    # 6 hours: 120m, 1.5 m/s
+            TLEAgeMapping(12.0, 200.0, 2.5),   # 12 hours: 200m, 2.5 m/s
+            TLEAgeMapping(24.0, 400.0, 5.0),   # 1 day: 400m, 5 m/s
+            TLEAgeMapping(48.0, 800.0, 10.0),  # 2 days: 800m, 10 m/s
+            TLEAgeMapping(72.0, 1500.0, 20.0), # 3 days: 1.5km, 20 m/s
+            TLEAgeMapping(168.0, 3000.0, 40.0) # 1 week: 3km, 40 m/s
         ]
         
         # Historical TLE analysis results

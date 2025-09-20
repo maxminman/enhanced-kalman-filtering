@@ -47,8 +47,17 @@ class EnhancedEKFTracker:
         # State: [position(3), velocity(3), Bc(1), Cr(1), along_track_accel(1)]
         self.state = np.zeros(self.state_dim)
         self.state[:6] = self.initial_state[:6]  # Position and velocity
-        self.state[6] = config.get('ballistic_coeff', 0.00540)  # Bc (m^2/kg)
-        self.state[7] = config.get('srp_coeff', 1.3)   # Cr
+        
+        # Use updated ISS parameters from OEM data
+        mass = config.get('satellite_mass', 471286.0)  # Updated ISS mass
+        drag_area = config.get('drag_area', 1514.10)   # Updated ISS drag area
+        drag_coeff = config.get('drag_coeff', 1.20)    # Updated ISS drag coefficient
+        
+        # Calculate ballistic coefficient from OEM parameters
+        ballistic_coeff = config.get('ballistic_coeff', drag_coeff * drag_area / mass)
+        
+        self.state[6] = ballistic_coeff  # Bc (m^2/kg) - calculated from OEM
+        self.state[7] = config.get('srp_coeff', 1.25)   # Cr - optimized value
         self.state[8] = 0.0  # Along-track empirical acceleration
         
         # Initialize covariance matrix
@@ -206,20 +215,20 @@ class EnhancedEKFTracker:
         return state
     
     def _initialize_covariance(self):
-        """Initialize covariance matrix with appropriate uncertainties"""
+        """Initialize covariance matrix with appropriate uncertainties - optimized for sub-1km accuracy"""
         self.P = np.eye(self.state_dim)
         
-        # Position uncertainty (m^2)
-        self.P[:3, :3] *= (1000)**2  # 1 km initial position uncertainty
+        # Position uncertainty (m^2) - more aggressive for better accuracy
+        self.P[:3, :3] *= (300)**2  # 300m initial position uncertainty (tighter)
         
-        # Velocity uncertainty (m/s)^2
-        self.P[3:6, 3:6] *= (10)**2  # 10 m/s initial velocity uncertainty
+        # Velocity uncertainty (m/s)^2 - tighter bounds
+        self.P[3:6, 3:6] *= (3)**2  # 3 m/s initial velocity uncertainty (more precise)
         
-        # Bc uncertainty
-        self.P[6, 6] = (0.002)**2  # Ballistic coefficient uncertainty (m^2/kg)^2
+        # Bc uncertainty - tighter bounds based on OEM data
+        self.P[6, 6] = (0.0005)**2  # Ballistic coefficient uncertainty (more precise)
         
-        # Cr uncertainty  
-        self.P[7, 7] = (0.3)**2  # 30% uncertainty in SRP coefficient
+        # Cr uncertainty - tighter bounds  
+        self.P[7, 7] = (0.15)**2  # 15% uncertainty in SRP coefficient (more confident)
         
         # Along-track acceleration uncertainty (m/s^2)^2
         self.P[8, 8] = (1e-6)**2  # Very small empirical acceleration
