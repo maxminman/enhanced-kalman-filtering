@@ -2,6 +2,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["glibcLocales", "libxcrypt", "pkg-config", "xsimd"]
 
 [agent]
 expertMode = true
@@ -22,18 +23,22 @@ args = "Streamlit App"
 name = "Streamlit App"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "streamlit run app.py --server.address=0.0.0.0 --server.port=5000"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "uv run streamlit run app.py --server.address=0.0.0.0 --server.port=5000"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 43383
+externalPort = 3000
+
 [deployment]
 deploymentTarget = "autoscale"
-run = ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=5000"]
+run = ["uv", "run", "streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=5000"]
