@@ -50,7 +50,7 @@ class ValidationFramework:
         
         self.logger.info("Validation framework initialized")
     
-    def load_oem_data(self, oem_file_path: str = None) -> bool:
+    def load_oem_data(self, oem_file_path: Optional[str] = None) -> bool:
         """
         Load OEM ephemeris data for validation
         
@@ -303,14 +303,14 @@ class ValidationFramework:
             percent_under_500m = (np.sum(errors < 500) / len(errors)) * 100
             
             return ValidationMetrics(
-                rms_error=rms_error,
-                mean_error=mean_error,
-                std_error=std_error,
-                max_error=max_error,
-                min_error=min_error,
-                p50_error=p50_error,
-                p95_error=p95_error,
-                p99_error=p99_error,
+                rms_error=float(rms_error),
+                mean_error=float(mean_error),
+                std_error=float(std_error),
+                max_error=float(max_error),
+                min_error=float(min_error),
+                p50_error=float(p50_error),
+                p95_error=float(p95_error),
+                p99_error=float(p99_error),
                 percent_under_1km=percent_under_1km,
                 percent_under_500m=percent_under_500m,
                 num_points=len(errors)
@@ -534,14 +534,14 @@ class ValidationFramework:
             
             # Compute synthetic metrics
             metrics = ValidationMetrics(
-                rms_error=np.sqrt(np.mean(errors**2)),
-                mean_error=np.mean(errors),
-                std_error=np.std(errors),
-                max_error=np.max(errors),
-                min_error=np.min(errors),
-                p50_error=np.percentile(errors, 50),
-                p95_error=np.percentile(errors, 95),
-                p99_error=np.percentile(errors, 99),
+                rms_error=float(np.sqrt(np.mean(errors**2))),
+                mean_error=float(np.mean(errors)),
+                std_error=float(np.std(errors)),
+                max_error=float(np.max(errors)),
+                min_error=float(np.min(errors)),
+                p50_error=float(np.percentile(errors, 50)),
+                p95_error=float(np.percentile(errors, 95)),
+                p99_error=float(np.percentile(errors, 99)),
                 percent_under_1km=(np.sum(errors < 1000) / len(errors)) * 100,
                 percent_under_500m=(np.sum(errors < 500) / len(errors)) * 100,
                 num_points=len(errors)
