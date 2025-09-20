@@ -63,8 +63,8 @@ class ForceModels:
         self.logger.info("Enhanced force models initialized with JPL ephemeris and improved geopotential")
     
     def compute_perturbations(self, position: np.ndarray, velocity: np.ndarray,
-                            datetime_utc: datetime, bc: float = None,
-                            cr_a: float = None) -> np.ndarray:
+                            datetime_utc: datetime, bc: Optional[float] = None,
+                            cr_a: Optional[float] = None) -> np.ndarray:
         """
         Compute total perturbation accelerations
         
@@ -88,15 +88,17 @@ class ForceModels:
             
             # Atmospheric drag
             if self.config.get('use_drag', True):
+                bc_value = bc if bc is not None else self.default_bc
                 accel_drag = self._compute_atmospheric_drag(
-                    position, velocity, datetime_utc, bc
+                    position, velocity, datetime_utc, bc_value
                 )
                 total_accel += accel_drag
             
             # Solar radiation pressure
             if self.config.get('use_srp', True):
+                cr_a_value = cr_a if cr_a is not None else (self.default_cr * self.default_area)
                 accel_srp = self._compute_solar_radiation_pressure(
-                    position, datetime_utc, cr_a
+                    position, datetime_utc, cr_a_value
                 )
                 total_accel += accel_srp
             
@@ -241,7 +243,7 @@ class ForceModels:
         self.logger.info("Enhanced geopotential coefficients initialized (4x4 EGM2008 subset)")
     
     def _compute_atmospheric_drag(self, position: np.ndarray, velocity: np.ndarray,
-                                datetime_utc: datetime, bc: float = None) -> np.ndarray:
+                                datetime_utc: datetime, bc: float) -> np.ndarray:
         """Compute atmospheric drag acceleration using ballistic coefficient"""
         try:
             # Get atmospheric density
@@ -269,9 +271,8 @@ class ForceModels:
             if v_rel_mag == 0:
                 return np.zeros(3)
             
-            # Ballistic coefficient (Cd * A / m)
-            if bc is None:
-                bc = self.default_bc
+            # Use provided ballistic coefficient (Cd * A / m)
+            # bc parameter is guaranteed to be non-None from compute_perturbations
             
             # Drag acceleration (specific force)
             # Using ballistic coefficient: F_drag = -0.5 * rho * Bc * v^2

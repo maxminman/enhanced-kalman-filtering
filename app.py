@@ -49,20 +49,22 @@ if 'stop_tracking_event' not in st.session_state:
     st.session_state.stop_tracking_event = threading.Event()
 
 def background_tracking_thread(tracker, data_buffer, stop_event):
-    """Background thread for continuous EKF tracking"""
+    """Background thread for simulated time EKF tracking"""
     logger = logging.getLogger('tracking_thread')
     logger.info("Background tracking thread started")
     
-    last_update_time = datetime.utcnow()
+    # Use simulated time stepping instead of wall-clock time
+    last_real_time = datetime.utcnow()
     
     while not stop_event.is_set():
         try:
-            current_time = datetime.utcnow()
+            current_real_time = datetime.utcnow()
             
-            # Update every 1 second with 1Hz tracking
-            if (current_time - last_update_time).total_seconds() >= 1.0:
-                # Call tracker update
-                result = tracker.update(current_time)
+            # Update every 1 second with 1Hz tracking using simulated time
+            if (current_real_time - last_real_time).total_seconds() >= 1.0:
+                # Advance tracker time by 1 second (simulated time)
+                tracker.current_time += timedelta(seconds=1)
+                result = tracker.update(tracker.current_time)
                 
                 if result:
                     # Add to thread-safe buffer
@@ -71,7 +73,7 @@ def background_tracking_thread(tracker, data_buffer, stop_event):
                 else:
                     logger.warning("Tracker update returned None - no data added")
                     
-                last_update_time = current_time
+                last_real_time = current_real_time
             
             # Small sleep to prevent CPU spinning
             time.sleep(0.1)
@@ -145,6 +147,28 @@ def main():
     with col1:
         st.subheader("Tracking Control")
         
+        # OEM Data Time Range Info
+        st.info("🕐 **OEM Data Range**: Sep 17, 2025 12:00 UTC to Oct 2, 2025 12:00 UTC")
+        
+        # Start time selection
+        col_date, col_time = st.columns(2)
+        with col_date:
+            start_date = st.date_input(
+                "Start Date (UTC)",
+                value=datetime(2025, 9, 17).date(),
+                min_value=datetime(2025, 9, 17).date(),
+                max_value=datetime(2025, 10, 2).date(),
+                help="Select date within OEM data range"
+            )
+        with col_time:
+            start_time = st.time_input(
+                "Start Time (UTC)",
+                value=datetime(2025, 9, 17, 12, 0, 0).time(),
+                help="Select time (recommend 12:00 to align with OEM data)"
+            )
+        
+        start_datetime = datetime.combine(start_date, start_time)
+        
         col_start, col_stop, col_validate = st.columns(3)
         
         with col_start:
@@ -173,9 +197,9 @@ def main():
                             tle_line1, tle_line2, config
                         )
                         
-                        # Initialize for real-time tracking
-                        if not st.session_state.tracker.start_real_time_tracking():
-                            st.error("Failed to initialize real-time tracking")
+                        # Initialize for OEM-aligned tracking with selected start time
+                        if not st.session_state.tracker.start_real_time_tracking(start_datetime):
+                            st.error("Failed to initialize tracking")
                             return
                         
                         st.session_state.tracking_active = True
