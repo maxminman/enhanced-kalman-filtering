@@ -292,35 +292,12 @@ class TLEMeasurementModel:
     
     def _tle_to_state_vector(self, tle_data, 
                            current_time: datetime) -> Optional[np.ndarray]:
-        """Convert TLE to state vector using SGP4 with TEME→ECI transformation"""
+        """Convert TLE to state vector using centralized SGP4→ECI conversion"""
         try:
-            from sgp4.api import Satrec, jday
+            # Use centralized SGP4→ECI conversion for consistency with Enhanced EKF Tracker
+            from utils import sgp4_to_eci_state_vector
             
-            # Create SGP4 satellite object from TLE
-            satellite = Satrec.twoline2rv(tle_data.line1, tle_data.line2)
-            
-            # Convert time to Julian date for SGP4
-            jd, fr = jday(
-                current_time.year, current_time.month, current_time.day,
-                current_time.hour, current_time.minute, 
-                current_time.second + current_time.microsecond/1e6
-            )
-            
-            # Get position and velocity in TEME frame (km, km/s)
-            error, r_teme_km, v_teme_km = satellite.sgp4(jd, fr)
-            
-            if error != 0:
-                self.logger.warning(f"SGP4 error code: {error}")
-                return None
-                
-            # Convert to numpy arrays and to meters/m/s
-            r_teme = np.array(r_teme_km) * 1000.0  # km → m
-            v_teme = np.array(v_teme_km) * 1000.0  # km/s → m/s
-            
-            # Transform from TEME to ECI (EME2000) frame
-            r_eci, v_eci = self._transform_teme_to_eci(r_teme, v_teme, current_time)
-            
-            return np.concatenate([r_eci, v_eci])
+            return sgp4_to_eci_state_vector(tle_data.line1, tle_data.line2, current_time)
             
         except Exception as e:
             self.logger.error(f"TLE to state vector conversion error: {e}")

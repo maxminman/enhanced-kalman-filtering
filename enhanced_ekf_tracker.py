@@ -105,43 +105,20 @@ class EnhancedEKFTracker:
     
     
     def _tle_to_state_vector(self, tle_data) -> np.ndarray:
-        """Convert TLE to Cartesian state vector using SGP4 with TEME→ECI conversion"""
+        """Convert TLE to Cartesian state vector using centralized SGP4→ECI conversion"""
         try:
-            # Use SGP4 for proper orbital propagation
-            from sgp4.api import Satrec, jday
+            # Use centralized SGP4→ECI conversion for consistency
+            from utils import sgp4_to_eci_state_vector
             
-            # Create SGP4 satellite object from TLE
-            satellite = Satrec.twoline2rv(tle_data.line1, tle_data.line2)
-            
-            # Propagate to TLE epoch (current time)
-            jd, fr = jday(
-                tle_data.epoch_datetime.year, 
-                tle_data.epoch_datetime.month, 
-                tle_data.epoch_datetime.day,
-                tle_data.epoch_datetime.hour, 
-                tle_data.epoch_datetime.minute, 
-                tle_data.epoch_datetime.second
+            state_vector = sgp4_to_eci_state_vector(
+                tle_data.line1, tle_data.line2, tle_data.epoch_datetime
             )
             
-            # Get position and velocity in TEME frame (km, km/s)
-            error, r_teme, v_teme = satellite.sgp4(jd, fr)
-            
-            if error != 0:
-                self.logger.warning(f"SGP4 error code: {error}, falling back to Keplerian")
+            if state_vector is not None:
+                return state_vector
+            else:
+                self.logger.warning("SGP4 conversion failed, falling back to Keplerian")
                 return self._keplerian_to_cartesian(tle_data)
-            
-            # Convert from TEME to ECI (EME2000) and km to meters
-            r_eci = np.array(r_teme) * 1000  # km to meters  
-            v_eci = np.array(v_teme) * 1000  # km/s to m/s
-            
-            # TODO: Implement proper TEME→ECI transformation with polar motion
-            # For now, TEME ≈ ECI for most LEO applications (< 10m error)
-            
-            state = np.zeros(6)
-            state[:3] = r_eci
-            state[3:6] = v_eci
-            
-            return state
             
         except Exception as e:
             self.logger.error(f"SGP4 conversion error: {e}")
@@ -526,6 +503,29 @@ class EnhancedEKFTracker:
         
         # Innovation
         innovation = measurement - h_pred
+        
+        # DIAGNOSTIC: Add detailed logging to debug large innovation
+        if len(self.measurement_history) < 5:  # Only log first few measurements
+            measurement_pos_km = measurement[:3] / 1000  # Convert to km for readability
+            state_pos_km = self.state[:3] / 1000
+            measurement_vel_kms = measurement[3:6] / 1000  # Convert to km/s for readability
+            state_vel_kms = self.state[3:6] / 1000
+            
+            self.logger.info(f"DIAGNOSTIC - Measurement position: [{measurement_pos_km[0]:.1f}, {measurement_pos_km[1]:.1f}, {measurement_pos_km[2]:.1f}] km")
+            self.logger.info(f"DIAGNOSTIC - EKF state position: [{state_pos_km[0]:.1f}, {state_pos_km[1]:.1f}, {state_pos_km[2]:.1f}] km")
+            self.logger.info(f"DIAGNOSTIC - Position difference: [{(measurement_pos_km[0]-state_pos_km[0]):.1f}, {(measurement_pos_km[1]-state_pos_km[1]):.1f}, {(measurement_pos_km[2]-state_pos_km[2]):.1f}] km")
+            
+            self.logger.info(f"DIAGNOSTIC - Measurement velocity: [{measurement_vel_kms[0]:.3f}, {measurement_vel_kms[1]:.3f}, {measurement_vel_kms[2]:.3f}] km/s")
+            self.logger.info(f"DIAGNOSTIC - EKF state velocity: [{state_vel_kms[0]:.3f}, {state_vel_kms[1]:.3f}, {state_vel_kms[2]:.3f}] km/s")
+            self.logger.info(f"DIAGNOSTIC - Velocity difference: [{(measurement_vel_kms[0]-state_vel_kms[0]):.3f}, {(measurement_vel_kms[1]-state_vel_kms[1]):.3f}, {(measurement_vel_kms[2]-state_vel_kms[2]):.3f}] km/s")
+            
+            # Calculate component contributions to innovation norm
+            pos_innovation_norm = np.linalg.norm(innovation[:3])
+            vel_innovation_norm = np.linalg.norm(innovation[3:6]) 
+            total_innovation_norm = np.linalg.norm(innovation)
+            self.logger.info(f"DIAGNOSTIC - Position innovation norm: {pos_innovation_norm:.1f} m")
+            self.logger.info(f"DIAGNOSTIC - Velocity innovation norm: {vel_innovation_norm:.1f} m/s") 
+            self.logger.info(f"DIAGNOSTIC - Total innovation norm: {total_innovation_norm:.1f} m")
         
         # Innovation covariance
         S = H @ self.P @ H.T + R
