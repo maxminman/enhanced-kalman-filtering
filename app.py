@@ -67,7 +67,9 @@ def background_tracking_thread(tracker, data_buffer, stop_event):
                 if result:
                     # Add to thread-safe buffer
                     data_buffer.append(result)
-                    logger.debug(f"Added tracking point: {len(data_buffer)} total points")
+                    logger.info(f"Added tracking point: {len(data_buffer)} total points")
+                else:
+                    logger.warning("Tracker update returned None - no data added")
                     
                 last_update_time = current_time
             
@@ -170,6 +172,12 @@ def main():
                         st.session_state.tracker = EnhancedEKFTracker(
                             tle_line1, tle_line2, config
                         )
+                        
+                        # Initialize for real-time tracking
+                        if not st.session_state.tracker.start_real_time_tracking():
+                            st.error("Failed to initialize real-time tracking")
+                            return
+                        
                         st.session_state.tracking_active = True
                         st.session_state.tracking_data = []
                         st.session_state.data_buffer.clear()

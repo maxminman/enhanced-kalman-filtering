@@ -103,6 +103,42 @@ class EnhancedEKFTracker:
         
         self.logger.info("Enhanced EKF Tracker initialized")
     
+    def start_real_time_tracking(self, start_time: Optional[datetime] = None):
+        """Initialize tracker for real-time tracking from current time"""
+        if start_time is None:
+            start_time = datetime.utcnow()
+            
+        # Propagate state from TLE epoch to current time using SGP4
+        try:
+            from utils import sgp4_to_eci_state_vector
+            
+            current_state = sgp4_to_eci_state_vector(
+                self.tle_data.line1, self.tle_data.line2, start_time
+            )
+            
+            if current_state is not None:
+                # Update state to current time
+                self.state[:6] = current_state
+                self.current_time = start_time
+                self.last_update = None
+                self.iteration_count = 0
+                
+                # Clear histories for fresh start
+                self.measurement_history = []
+                self.state_history = []
+                self.innovation_history = []
+                self.divergence_count = 0
+                
+                self.logger.info(f"Started real-time tracking at {start_time}")
+                return True
+            else:
+                self.logger.error("Failed to propagate state to current time")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Real-time tracking initialization failed: {e}")
+            return False
+    
     
     def _tle_to_state_vector(self, tle_data) -> np.ndarray:
         """Convert TLE to Cartesian state vector using centralized SGP4→ECI conversion"""
