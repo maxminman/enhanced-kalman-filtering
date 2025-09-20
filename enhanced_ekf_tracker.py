@@ -504,41 +504,29 @@ class EnhancedEKFTracker:
         # Innovation
         innovation = measurement - h_pred
         
-        # DIAGNOSTIC: Add detailed logging to debug large innovation
-        if len(self.measurement_history) < 5:  # Only log first few measurements
-            measurement_pos_km = measurement[:3] / 1000  # Convert to km for readability
-            state_pos_km = self.state[:3] / 1000
-            measurement_vel_kms = measurement[3:6] / 1000  # Convert to km/s for readability
-            state_vel_kms = self.state[3:6] / 1000
-            
-            self.logger.info(f"DIAGNOSTIC - Measurement position: [{measurement_pos_km[0]:.1f}, {measurement_pos_km[1]:.1f}, {measurement_pos_km[2]:.1f}] km")
-            self.logger.info(f"DIAGNOSTIC - EKF state position: [{state_pos_km[0]:.1f}, {state_pos_km[1]:.1f}, {state_pos_km[2]:.1f}] km")
-            self.logger.info(f"DIAGNOSTIC - Position difference: [{(measurement_pos_km[0]-state_pos_km[0]):.1f}, {(measurement_pos_km[1]-state_pos_km[1]):.1f}, {(measurement_pos_km[2]-state_pos_km[2]):.1f}] km")
-            
-            self.logger.info(f"DIAGNOSTIC - Measurement velocity: [{measurement_vel_kms[0]:.3f}, {measurement_vel_kms[1]:.3f}, {measurement_vel_kms[2]:.3f}] km/s")
-            self.logger.info(f"DIAGNOSTIC - EKF state velocity: [{state_vel_kms[0]:.3f}, {state_vel_kms[1]:.3f}, {state_vel_kms[2]:.3f}] km/s")
-            self.logger.info(f"DIAGNOSTIC - Velocity difference: [{(measurement_vel_kms[0]-state_vel_kms[0]):.3f}, {(measurement_vel_kms[1]-state_vel_kms[1]):.3f}, {(measurement_vel_kms[2]-state_vel_kms[2]):.3f}] km/s")
-            
-            # Calculate component contributions to innovation norm
-            pos_innovation_norm = np.linalg.norm(innovation[:3])
-            vel_innovation_norm = np.linalg.norm(innovation[3:6]) 
-            total_innovation_norm = np.linalg.norm(innovation)
-            self.logger.info(f"DIAGNOSTIC - Position innovation norm: {pos_innovation_norm:.1f} m")
-            self.logger.info(f"DIAGNOSTIC - Velocity innovation norm: {vel_innovation_norm:.1f} m/s") 
-            self.logger.info(f"DIAGNOSTIC - Total innovation norm: {total_innovation_norm:.1f} m")
+        # Optional diagnostic logging (disabled for performance)
+        # if len(self.measurement_history) < 3:  
+        #     pos_diff = np.linalg.norm(innovation[:3]) / 1000  # km
+        #     self.logger.debug(f"Innovation: position={pos_diff:.1f}km")
         
         # Innovation covariance
         S = H @ self.P @ H.T + R
         
-        # Check for filter divergence
+        # Check for filter divergence using Euclidean norm 
+        innovation_norm = np.linalg.norm(innovation)  # Use Euclidean norm for intuitive threshold
+        
+        # Also calculate normalized innovation (chi-squared) for statistical tests
         try:
-            innovation_norm = innovation.T @ np.linalg.inv(S) @ innovation
+            normalized_innovation = innovation.T @ np.linalg.inv(S) @ innovation
+            self.logger.debug(f"Normalized innovation (chi-squared): {normalized_innovation:.1f}")
         except np.linalg.LinAlgError:
-            innovation_norm = np.linalg.norm(innovation)**2
+            normalized_innovation = None
+            self.logger.warning("Could not calculate normalized innovation due to singular covariance")
             
         self.innovation_history.append(innovation_norm)
         
-        if innovation_norm > 50:  # Chi-square threshold for 6 DOF
+        # Use appropriate threshold for Euclidean norm (meters)
+        if innovation_norm > 100000:  # 100km threshold for divergence detection
             self.divergence_count += 1
             self.logger.warning(f"Large innovation detected: {innovation_norm:.2f}")
             
