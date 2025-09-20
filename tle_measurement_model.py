@@ -24,17 +24,10 @@ class TLEMeasurementModel:
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
         
-        # Optimized age-to-noise mappings for sub-1km accuracy (more aggressive)
-        self.age_mappings = [
-            TLEAgeMapping(1.0, 50.0, 0.5),     # Fresh TLE: 50m, 0.5 m/s (aggressive)
-            TLEAgeMapping(3.0, 80.0, 1.0),     # 3 hours: 80m, 1 m/s
-            TLEAgeMapping(6.0, 120.0, 1.5),    # 6 hours: 120m, 1.5 m/s
-            TLEAgeMapping(12.0, 200.0, 2.5),   # 12 hours: 200m, 2.5 m/s
-            TLEAgeMapping(24.0, 400.0, 5.0),   # 1 day: 400m, 5 m/s
-            TLEAgeMapping(48.0, 800.0, 10.0),  # 2 days: 800m, 10 m/s
-            TLEAgeMapping(72.0, 1500.0, 20.0), # 3 days: 1.5km, 20 m/s
-            TLEAgeMapping(168.0, 3000.0, 40.0) # 1 week: 3km, 40 m/s
-        ]
+        # Architect-recommended adaptive noise formula for sub-1km accuracy
+        # σpos = clamp(0.8 + 0.3·h, 0.8, 5.0) km
+        # σvel = 0.6 m/s + 0.2·h m/s
+        self.use_adaptive_noise_formula = True
         
         # Historical TLE analysis results
         self.historical_analysis = {}
@@ -173,27 +166,36 @@ class TLEMeasurementModel:
     def _get_noise_for_age(self, age_hours: float) -> Tuple[float, float]:
         """Get noise parameters for TLE age"""
         try:
-            # Find appropriate mapping
-            for mapping in self.age_mappings:
-                if age_hours <= mapping.max_age_hours:
-                    return mapping.position_sigma, mapping.velocity_sigma
-            
-            # Use last mapping for very old TLEs
-            last_mapping = self.age_mappings[-1]
-            
-            # Extrapolate for very old TLEs
-            if age_hours > last_mapping.max_age_hours:
-                age_factor = age_hours / last_mapping.max_age_hours
-                pos_sigma = last_mapping.position_sigma * age_factor
-                vel_sigma = last_mapping.velocity_sigma * age_factor
+            if hasattr(self, 'use_adaptive_noise_formula') and self.use_adaptive_noise_formula:
+                # Architect-recommended adaptive noise formula for sub-1km accuracy
+                # σpos = clamp(0.8 + 0.3·h, 0.8, 5.0) km
+                # σvel = 0.6 m/s + 0.2·h m/s
+                pos_sigma_km = max(0.8, min(5.0, 0.8 + 0.3 * age_hours))
+                vel_sigma_ms = 0.6 + 0.2 * age_hours
                 
-                # Cap at reasonable maximum
-                pos_sigma = min(pos_sigma, 10000.0)  # 10 km max
-                vel_sigma = min(vel_sigma, 100.0)    # 100 m/s max
+                return pos_sigma_km * 1000.0, vel_sigma_ms  # Convert to meters
+            else:
+                # Original mapping approach
+                for mapping in self.age_mappings:
+                    if age_hours <= mapping.max_age_hours:
+                        return mapping.position_sigma, mapping.velocity_sigma
                 
-                return pos_sigma, vel_sigma
-            
-            return last_mapping.position_sigma, last_mapping.velocity_sigma
+                # Use last mapping for very old TLEs
+                last_mapping = self.age_mappings[-1]
+                
+                # Extrapolate for very old TLEs
+                if age_hours > last_mapping.max_age_hours:
+                    age_factor = age_hours / last_mapping.max_age_hours
+                    pos_sigma = last_mapping.position_sigma * age_factor
+                    vel_sigma = last_mapping.velocity_sigma * age_factor
+                    
+                    # Cap at reasonable maximum
+                    pos_sigma = min(pos_sigma, 10000.0)  # 10 km max
+                    vel_sigma = min(vel_sigma, 100.0)    # 100 m/s max
+                    
+                    return pos_sigma, vel_sigma
+                
+                return last_mapping.position_sigma, last_mapping.velocity_sigma
             
         except Exception as e:
             self.logger.error(f"Noise parameter lookup error: {e}")

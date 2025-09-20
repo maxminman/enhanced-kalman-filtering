@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import time
 import threading
 import queue
+from collections import deque
 import json
 import os
 import logging
@@ -40,6 +41,44 @@ if 'space_weather' not in st.session_state:
     st.session_state.space_weather = SpaceWeatherData()
 if 'update_placeholder' not in st.session_state:
     st.session_state.update_placeholder = None
+if 'tracking_thread' not in st.session_state:
+    st.session_state.tracking_thread = None
+if 'data_buffer' not in st.session_state:
+    st.session_state.data_buffer = deque(maxlen=1000)
+if 'stop_tracking_event' not in st.session_state:
+    st.session_state.stop_tracking_event = threading.Event()
+
+def background_tracking_thread(tracker, data_buffer, stop_event):
+    """Background thread for continuous EKF tracking"""
+    logger = logging.getLogger('tracking_thread')
+    logger.info("Background tracking thread started")
+    
+    last_update_time = datetime.utcnow()
+    
+    while not stop_event.is_set():
+        try:
+            current_time = datetime.utcnow()
+            
+            # Update every 1 second with 1Hz tracking
+            if (current_time - last_update_time).total_seconds() >= 1.0:
+                # Call tracker update
+                result = tracker.update(current_time)
+                
+                if result:
+                    # Add to thread-safe buffer
+                    data_buffer.append(result)
+                    logger.debug(f"Added tracking point: {len(data_buffer)} total points")
+                    
+                last_update_time = current_time
+            
+            # Small sleep to prevent CPU spinning
+            time.sleep(0.1)
+            
+        except Exception as e:
+            logger.error(f"Background tracking error: {e}")
+            time.sleep(1.0)  # Wait longer on error
+    
+    logger.info("Background tracking thread stopped")
 
 def main():
     st.title("🛰️ Enhanced Orbital Determination System")
@@ -110,11 +149,11 @@ def main():
             if st.button("Start Tracking", disabled=st.session_state.tracking_active):
                 if tle_line1 and tle_line2:
                     try:
-                        # Initialize tracker
+                        # Initialize tracker with optimized sub-1km configuration
                         config = {
                             'ballistic_coeff': ballistic_coeff,
                             'srp_coeff': srp_coeff,
-                            'process_noise_scale': process_noise,
+                            'process_noise_scale': 0.5,  # Architect recommended: reduced for stability
                             'use_j2_j6': use_j2_j6,
                             'use_drag': use_drag,
                             'use_srp': use_srp,
@@ -133,6 +172,17 @@ def main():
                         )
                         st.session_state.tracking_active = True
                         st.session_state.tracking_data = []
+                        st.session_state.data_buffer.clear()
+                        st.session_state.stop_tracking_event.clear()
+                        
+                        # Start background tracking thread
+                        st.session_state.tracking_thread = threading.Thread(
+                            target=background_tracking_thread,
+                            args=(st.session_state.tracker, st.session_state.data_buffer, st.session_state.stop_tracking_event),
+                            daemon=True
+                        )
+                        st.session_state.tracking_thread.start()
+                        
                         st.success("Tracking started!")
                         st.rerun()
                         
@@ -144,7 +194,14 @@ def main():
         with col_stop:
             if st.button("Stop Tracking", disabled=not st.session_state.tracking_active):
                 st.session_state.tracking_active = False
+                
+                # Stop background thread
+                if st.session_state.tracking_thread and st.session_state.tracking_thread.is_alive():
+                    st.session_state.stop_tracking_event.set()
+                    st.session_state.tracking_thread.join(timeout=2.0)
+                
                 st.session_state.tracker = None
+                st.session_state.tracking_thread = None
                 st.info("Tracking stopped")
                 st.rerun()
         
@@ -183,8 +240,9 @@ def main():
         else:
             st.info("🔴 Tracking Inactive")
         
-        # Data collection status
-        st.metric("Data Points", len(st.session_state.tracking_data))
+        # Data collection status - combine buffer and session data
+        total_points = len(st.session_state.tracking_data) + len(st.session_state.data_buffer)
+        st.metric("Data Points", total_points)
         
         # Validation status
         if st.session_state.validation_results:
@@ -195,30 +253,28 @@ def main():
                 st.metric("P95 Error (m)", f"{metrics.get('p95_error', 0):.1f}")
                 st.metric("% < 1km", f"{metrics.get('percent_under_1km', 0):.1f}%")
     
-    # Real-time tracking simulation
-    if st.session_state.tracking_active and st.session_state.tracker:
-        # Create placeholders for real-time updates
-        if st.session_state.update_placeholder is None:
-            st.session_state.update_placeholder = st.empty()
+    # Transfer data from background thread buffer to session state
+    if st.session_state.tracking_active:
+        # Transfer new data from buffer to session tracking_data
+        while st.session_state.data_buffer:
+            try:
+                result = st.session_state.data_buffer.popleft()
+                st.session_state.tracking_data.append(result)
+            except IndexError:
+                break
         
-        # Simulate periodic updates
-        current_time = datetime.utcnow()
-        tracking_result = st.session_state.tracker.update(current_time)
+        # Keep only last 1000 points for display
+        if len(st.session_state.tracking_data) > 1000:
+            st.session_state.tracking_data = st.session_state.tracking_data[-1000:]
         
-        if tracking_result:
-            st.session_state.tracking_data.append(tracking_result)
-            
-            # Keep only last 1000 points for display
-            if len(st.session_state.tracking_data) > 1000:
-                st.session_state.tracking_data = st.session_state.tracking_data[-1000:]
-            
-            # Display current results
-            with st.session_state.update_placeholder.container():
-                display_tracking_results(tracking_result)
-                display_tracking_plots()
+        # Display current results if we have data
+        if len(st.session_state.tracking_data) > 0:
+            latest_result = st.session_state.tracking_data[-1]
+            display_tracking_results(latest_result)
+            display_tracking_plots()
         
-        # Auto-refresh every 10 seconds when tracking is active
-        time.sleep(1)
+        # Auto-refresh every 2 seconds when tracking is active
+        time.sleep(2)
         st.rerun()
     
     elif len(st.session_state.tracking_data) > 0:

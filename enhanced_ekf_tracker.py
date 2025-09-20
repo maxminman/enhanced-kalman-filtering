@@ -192,23 +192,25 @@ class EnhancedEKFTracker:
         return state
     
     def _initialize_covariance(self):
-        """Initialize covariance matrix with appropriate uncertainties - optimized for sub-1km accuracy"""
+        """Initialize covariance matrix with architect-recommended uncertainties for sub-1km accuracy"""
         self.P = np.eye(self.state_dim)
         
-        # Position uncertainty (m^2) - more aggressive for better accuracy
-        self.P[:3, :3] *= (300)**2  # 300m initial position uncertainty (tighter)
+        # Architect recommendations for sub-1km accuracy:
+        # Position uncertainty (m^2) - P0: pos (5 km)²
+        self.P[:3, :3] *= (5000)**2  # 5 km initial position uncertainty
         
-        # Velocity uncertainty (m/s)^2 - tighter bounds
-        self.P[3:6, 3:6] *= (3)**2  # 3 m/s initial velocity uncertainty (more precise)
+        # Velocity uncertainty (m/s)² - P0: vel (5 m/s)²
+        self.P[3:6, 3:6] *= (5)**2  # 5 m/s initial velocity uncertainty
         
-        # Bc uncertainty - tighter bounds based on OEM data
-        self.P[6, 6] = (0.0005)**2  # Ballistic coefficient uncertainty (more precise)
+        # Ballistic coefficient uncertainty - P0: Bc (0.3·Bc0)²
+        bc0 = self.state[6]  # Current Bc value
+        self.P[6, 6] = (0.3 * bc0)**2  # 30% of initial Bc value
         
-        # Cr uncertainty - tighter bounds  
-        self.P[7, 7] = (0.15)**2  # 15% uncertainty in SRP coefficient (more confident)
+        # SRP coefficient uncertainty - P0: Cr 0.1²
+        self.P[7, 7] = (0.1)**2  # 0.1 uncertainty in SRP coefficient
         
-        # Along-track acceleration uncertainty (m/s^2)^2
-        self.P[8, 8] = (1e-6)**2  # Very small empirical acceleration
+        # Along-track acceleration uncertainty - P0: a_at (5e⁻⁷ m/s²)²
+        self.P[8, 8] = (5e-7)**2  # Architect-recommended empirical acceleration uncertainty
     
     def predict(self, dt: float):
         """Prediction step of the EKF"""
@@ -330,26 +332,55 @@ class EnhancedEKFTracker:
         return F
     
     def _compute_process_noise_matrix(self, dt: float) -> np.ndarray:
-        """Compute process noise matrix Q"""
+        """Compute process noise matrix Q using architect-recommended RTN frame spectral densities"""
         Q = np.zeros((self.state_dim, self.state_dim))
         
-        # Position and velocity process noise
-        # Use continuous-time white noise acceleration model
-        q_accel = self.config.get('process_noise_scale', 1.0) * 1e-12  # m^2/s^3
+        # Architect-recommended process noise spectral densities in RTN frame:
+        # qR = 1e⁻⁸ m²/s³ (radial)
+        # qT = 5e⁻⁷ m²/s³ (tangential)  
+        # qN = 1e⁻⁸ m²/s³ (normal)
         
-        Q_pos_vel = np.array([
+        scale = self.config.get('process_noise_scale', 0.5)  # Architect recommended: 0.5
+        
+        q_radial = scale * 1e-8      # m²/s³
+        q_tangential = scale * 5e-7  # m²/s³ 
+        q_normal = scale * 1e-8      # m²/s³
+        
+        # Compute RTN transformation matrix
+        r_eci = self.state[:3]
+        v_eci = self.state[3:6]
+        
+        # RTN basis vectors
+        r_hat = r_eci / np.linalg.norm(r_eci)  # Radial
+        h_vec = np.cross(r_eci, v_eci)
+        n_hat = h_vec / np.linalg.norm(h_vec)  # Normal (orbit normal)
+        t_hat = np.cross(n_hat, r_hat)        # Tangential (along-track)
+        
+        # RTN to ECI transformation matrix
+        T_rtn_eci = np.array([r_hat, t_hat, n_hat]).T
+        
+        # Process noise in RTN frame (diagonal)
+        Q_pos_vel_rtn = np.array([
             [dt**3/3, dt**2/2],
             [dt**2/2, dt]
-        ]) * q_accel
+        ])
         
-        # Apply to each spatial dimension
-        for i in range(3):
-            Q[i:6:3, i:6:3] = Q_pos_vel
+        # Build RTN process noise matrix
+        Q_rtn = np.zeros((6, 6))
+        for i, q_spec in enumerate([q_radial, q_tangential, q_normal]):
+            Q_rtn[i:6:3, i:6:3] = Q_pos_vel_rtn * q_spec
         
-        # Parameter process noise (random walk)
-        Q[6, 6] = (1e-6 * dt)**2  # Bc random walk (m^2/kg)^2
-        Q[7, 7] = (0.005 * dt)**2  # Cr random walk
-        Q[8, 8] = (1e-8 * dt)**2  # Along-track acceleration random walk
+        # Transform to ECI frame
+        T_full = np.zeros((6, 6))
+        T_full[:3, :3] = T_rtn_eci
+        T_full[3:6, 3:6] = T_rtn_eci
+        
+        Q[:6, :6] = T_full @ Q_rtn @ T_full.T
+        
+        # Parameter process noise (random walk) - architect recommendations
+        Q[6, 6] = (1e-6 * dt)**2     # Bc random walk (m^2/kg)^2
+        Q[7, 7] = (0.005 * dt)**2    # Cr random walk
+        Q[8, 8] = 1e-12 * dt         # Along-track acceleration random walk: 1e⁻¹² (m/s²)²/s (corrected discretization)
         
         return Q
     
