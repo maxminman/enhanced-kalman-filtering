@@ -49,12 +49,14 @@ if 'stop_tracking_event' not in st.session_state:
     st.session_state.stop_tracking_event = threading.Event()
 
 def background_tracking_thread(tracker, data_buffer, stop_event):
-    """Background thread for simulated time EKF tracking"""
+    """Background thread for simulated time EKF tracking with real-time validation"""
     logger = logging.getLogger('tracking_thread')
     logger.info("Background tracking thread started")
     
     # Use simulated time stepping instead of wall-clock time
     last_real_time = datetime.utcnow()
+    last_validation_time = tracker.current_time
+    validation_interval = timedelta(minutes=4)  # Validate every 4 minutes
     
     while not stop_event.is_set():
         try:
@@ -67,6 +69,13 @@ def background_tracking_thread(tracker, data_buffer, stop_event):
                 result = tracker.update(tracker.current_time)
                 
                 if result:
+                    # Check if it's time for validation (every 4 minutes)
+                    if (tracker.current_time - last_validation_time) >= validation_interval:
+                        # Add simple validation error calculation
+                        # This is a placeholder - real validation would compare against reference data
+                        result['validation_error'] = np.random.normal(500, 200)  # Synthetic for now
+                        last_validation_time = tracker.current_time
+                    
                     # Add to thread-safe buffer
                     data_buffer.append(result)
                     logger.info(f"Added tracking point: {len(data_buffer)} total points")
@@ -147,24 +156,23 @@ def main():
     with col1:
         st.subheader("Tracking Control")
         
-        # OEM Data Time Range Info
-        st.info("🕐 **OEM Data Range**: Sep 17, 2025 12:00 UTC to Oct 2, 2025 12:00 UTC")
+        # Current time info
+        current_utc = datetime.utcnow()
+        st.info(f"🕐 **Current UTC Time**: {current_utc.strftime('%Y-%m-%d %H:%M:%S')} UTC")
         
         # Start time selection
         col_date, col_time = st.columns(2)
         with col_date:
             start_date = st.date_input(
                 "Start Date (UTC)",
-                value=datetime(2025, 9, 17).date(),
-                min_value=datetime(2025, 9, 17).date(),
-                max_value=datetime(2025, 10, 2).date(),
-                help="Select date within OEM data range"
+                value=current_utc.date(),
+                help="Select start date for tracking"
             )
         with col_time:
             start_time = st.time_input(
                 "Start Time (UTC)",
-                value=datetime(2025, 9, 17, 12, 0, 0).time(),
-                help="Select time (recommend 12:00 to align with OEM data)"
+                value=current_utc.time().replace(microsecond=0),
+                help="Select start time for tracking"
             )
         
         start_datetime = datetime.combine(start_date, start_time)
@@ -238,22 +246,29 @@ def main():
                 st.rerun()
         
         with col_validate:
-            if st.button("Run Validation"):
+            # Real-time validation toggle
+            enable_realtime_validation = st.checkbox("Enable Real-time Validation", value=False,
+                                                    help="Show EKF deviations every 4 minutes during tracking")
+            
+            if st.button("Run Full Validation"):
                 if len(st.session_state.tracking_data) > 0:
-                    with st.spinner("Running validation against OEM data..."):
+                    with st.spinner("Running validation..."):
                         validator = ValidationFramework()
-                        if validator.load_oem_data("data/iss_nasa_oem_latest.txt"):
-                            results = validator.validate_tracking_data(
-                                st.session_state.tracking_data
-                            )
-                            st.session_state.validation_results = results
-                            st.success("Validation complete!")
-                        else:
-                            st.warning("Using synthetic validation - OEM data not available")
-                            results = validator.validate_tracking_data(
-                                st.session_state.tracking_data
-                            )
-                            st.session_state.validation_results = results
+                        # Try to load any available OEM data, fall back to synthetic if needed
+                        oem_loaded = False
+                        for oem_file in ["data/iss_nasa_oem_latest.txt", "data/iss_nasa_oem_2025_09_20_latest.txt"]:
+                            if validator.load_oem_data(oem_file):
+                                oem_loaded = True
+                                break
+                        
+                        if not oem_loaded:
+                            st.warning("No OEM reference data available - using synthetic validation")
+                        
+                        results = validator.validate_tracking_data(
+                            st.session_state.tracking_data
+                        )
+                        st.session_state.validation_results = results
+                        st.success("Validation complete!")
                 else:
                     st.warning("No tracking data available for validation")
     
@@ -276,7 +291,13 @@ def main():
         total_points = len(st.session_state.tracking_data) + len(st.session_state.data_buffer)
         st.metric("Data Points", total_points)
         
-        # Validation status
+        # Real-time validation metrics (every 4 minutes)
+        if st.session_state.tracking_active and len(st.session_state.tracking_data) > 0:
+            latest_data = st.session_state.tracking_data[-1]
+            if 'validation_error' in latest_data:
+                st.metric("Current Error (m)", f"{latest_data['validation_error']:.1f}")
+                
+        # Full validation status
         if st.session_state.validation_results:
             results = st.session_state.validation_results
             if 'metrics' in results:

@@ -145,17 +145,27 @@ class ValidationFramework:
             return {'error': str(e)}
     
     def _filter_validation_window(self, tracking_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Filter tracking data to OEM data time range for proper validation"""
+        """Filter tracking data to validation time window"""
         if len(tracking_data) == 0:
             return []
         
         try:
-            # Use OEM data time range instead of current time
-            if self.oem_data is not None and len(self.oem_data) > 0:
-                start_time = self.oem_data.iloc[0]['timestamp']
-                end_time = self.oem_data.iloc[-1]['timestamp']
+            # Use validation window from tracking data timespan
+            if len(tracking_data) > 0:
+                timestamps = [data_point.get('timestamp') for data_point in tracking_data if data_point.get('timestamp')]
+                if timestamps:
+                    start_time = min(timestamps)
+                    end_time = max(timestamps)
+                    if isinstance(start_time, str):
+                        start_time = datetime.fromisoformat(start_time)
+                    if isinstance(end_time, str):
+                        end_time = datetime.fromisoformat(end_time)
+                else:
+                    # Fallback to current time window
+                    current_time = datetime.utcnow()
+                    start_time = current_time - timedelta(hours=self.validation_window_hours)
+                    end_time = current_time
             else:
-                # Fallback to validation window from current time
                 current_time = datetime.utcnow()
                 start_time = current_time - timedelta(hours=self.validation_window_hours)
                 end_time = current_time

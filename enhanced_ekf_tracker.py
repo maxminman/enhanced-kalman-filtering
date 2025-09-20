@@ -104,10 +104,10 @@ class EnhancedEKFTracker:
         self.logger.info("Enhanced EKF Tracker initialized")
     
     def start_real_time_tracking(self, start_time: Optional[datetime] = None):
-        """Initialize tracker for OEM-aligned tracking from specified time"""
+        """Initialize tracker for tracking from specified time"""
         if start_time is None:
-            # Default to OEM data start time for validation alignment
-            start_time = datetime(2025, 9, 17, 12, 0, 0)
+            # Default to current UTC time
+            start_time = datetime.utcnow()
             
         # Propagate state from TLE epoch to current time using SGP4
         try:
