@@ -5,12 +5,16 @@ from typing import Dict, List, Optional, Tuple, Any
 
 from force_models import ForceModels
 from atmospheric_models import NRLMSISE00
-from batch_estimator import BatchEstimator
+from adaptive_atmospheric_model import AdaptiveAtmosphericModel
+from satellite_characterizer import SatelliteCharacterizer
+from batch_estimator import EnhancedBatchEstimator
 from rts_smoother import RTSSmoother
 from adaptive_filtering import AdaptiveFiltering
 from ml_residual_corrector import MLResidualCorrector
 from tle_measurement_model import TLEMeasurementModel
 from coordinate_transforms import CoordinateTransforms
+from adaptive_filter_tuner import AdaptiveFilterTuner, AdaptationConfig
+from enhanced_divergence_detector import EnhancedDivergenceDetector, RecoveryConfig
 from utils import julian_date, eci_to_geodetic
 
 class EnhancedEKFTracker:
@@ -63,14 +67,25 @@ class EnhancedEKFTracker:
         # Initialize covariance matrix
         self._initialize_covariance()
         
+        # Initialize satellite characterization
+        self.satellite_characterizer = SatelliteCharacterizer()
+        self.satellite_props = self.satellite_characterizer.characterize_satellite(
+            self.tle_data, config.get('norad_id', '25544')
+        )
+        
         # Initialize sub-systems
         self.force_models = ForceModels(config)
         self.atmosphere = NRLMSISE00() if config.get('use_nrlmsise', True) else None
+        
+        # Initialize adaptive atmospheric model
+        self.adaptive_atmosphere = AdaptiveAtmosphericModel(config)
+        self.adaptive_atmosphere.configure_for_satellite(self.satellite_props)
+        
         self.measurement_model = TLEMeasurementModel()
         
         # Advanced features
         if config.get('use_batch_estimation', True):
-            self.batch_estimator = BatchEstimator(config)
+            self.batch_estimator = EnhancedBatchEstimator(config)
         else:
             self.batch_estimator = None
             
@@ -88,6 +103,38 @@ class EnhancedEKFTracker:
             self.ml_corrector = MLResidualCorrector(config)
         else:
             self.ml_corrector = None
+        
+        # Initialize adaptive filter tuner
+        adaptation_config = AdaptationConfig(
+            innovation_window_size=config.get('innovation_window_size', 50),
+            min_samples_for_adaptation=config.get('min_samples_for_adaptation', 10),
+            max_adaptation_rate=config.get('max_adaptation_rate', 0.1),
+            bias_detection_threshold=config.get('bias_detection_threshold', 3.0),
+            process_noise_adaptation_rate=config.get('process_noise_adaptation_rate', 0.05),
+            measurement_noise_adaptation_rate=config.get('measurement_noise_adaptation_rate', 0.1),
+            tle_age_threshold_hours=config.get('tle_age_threshold_hours', 24.0)
+        )
+        
+        if config.get('use_adaptive_tuning', True):
+            self.adaptive_tuner = AdaptiveFilterTuner(adaptation_config)
+        else:
+            self.adaptive_tuner = None
+        
+        # Initialize enhanced divergence detector
+        recovery_config = RecoveryConfig(
+            innovation_warning_threshold=config.get('innovation_warning_threshold', 1000.0),
+            innovation_moderate_threshold=config.get('innovation_moderate_threshold', 5000.0),
+            innovation_severe_threshold=config.get('innovation_severe_threshold', 20000.0),
+            innovation_critical_threshold=config.get('innovation_critical_threshold', 50000.0),
+            enable_covariance_inflation=config.get('enable_covariance_inflation', True),
+            enable_parameter_reset=config.get('enable_parameter_reset', True),
+            enable_filter_restart=config.get('enable_filter_restart', True)
+        )
+        
+        if config.get('use_enhanced_divergence_detection', True):
+            self.divergence_detector = EnhancedDivergenceDetector(recovery_config)
+        else:
+            self.divergence_detector = None
         
         # Tracking variables - use TLE epoch for proper time alignment
         self.current_time = self.tle_data.epoch_datetime
@@ -211,6 +258,19 @@ class EnhancedEKFTracker:
         
         # Along-track acceleration uncertainty - P0: a_at (5e⁻⁷ m/s²)²
         self.P[8, 8] = (5e-7)**2  # Architect-recommended empirical acceleration uncertainty
+        
+        # Set up base noise matrices for adaptive tuner
+        if hasattr(self, 'adaptive_tuner') and self.adaptive_tuner is not None:
+            # Compute base process noise matrix (using 1 second as reference)
+            base_Q = self._compute_process_noise_matrix(1.0)
+            
+            # Base measurement noise matrix (position and velocity from TLE)
+            base_R = np.eye(6)
+            base_R[:3, :3] *= (1000.0)**2  # 1 km position noise
+            base_R[3:6, 3:6] *= (1.0)**2   # 1 m/s velocity noise
+            
+            # Set base matrices in adaptive tuner
+            self.adaptive_tuner.set_base_noise_matrices(base_Q, base_R)
     
     def predict(self, dt: float):
         """Prediction step of the EKF"""
@@ -226,6 +286,15 @@ class EnhancedEKFTracker:
         
         # Process noise matrix Q
         Q = self._compute_process_noise_matrix(dt)
+        
+        # Apply adaptive process noise scaling if available
+        if self.adaptive_tuner is not None:
+            try:
+                adapted_Q, _ = self.adaptive_tuner.get_adapted_noise_matrices()
+                # Scale the computed Q matrix by the adaptation factor
+                Q = adapted_Q * (dt / 1.0)  # Scale by dt since base matrix is for 1 second
+            except Exception as e:
+                self.logger.warning(f"Failed to apply adaptive process noise: {e}")
         
         # Covariance prediction
         self.P = F @ self.P @ F.T + Q
@@ -253,9 +322,10 @@ class EnhancedEKFTracker:
             mu = 3.986004418e14  # Earth gravitational parameter
             accel += -mu * r / (r_norm**3)
             
-            # Add perturbations through force models
-            perturbations = self.force_models.compute_perturbations(
-                r, v, self.current_time, self.state[6], self.state[7]
+            # Add perturbations through adaptive force models
+            perturbations = self.force_models.compute_adaptive_perturbations(
+                r, v, self.current_time, self.state[6], self.state[7],
+                self.adaptive_atmosphere, self.satellite_props
             )
             accel += perturbations
             
@@ -540,32 +610,82 @@ class EnhancedEKFTracker:
         #     pos_diff = np.linalg.norm(innovation[:3]) / 1000  # km
         #     self.logger.debug(f"Innovation: position={pos_diff:.1f}km")
         
+        # Get adapted noise matrices if adaptive tuner is available
+        if self.adaptive_tuner is not None:
+            try:
+                adapted_Q, adapted_R = self.adaptive_tuner.get_adapted_noise_matrices()
+                # Use adapted measurement noise for this update
+                R = adapted_R[:self.obs_dim, :self.obs_dim]  # Extract relevant portion
+            except Exception as e:
+                self.logger.warning(f"Failed to get adapted noise matrices: {e}")
+        
         # Innovation covariance
         S = H @ self.P @ H.T + R
         
-        # Check for filter divergence using Euclidean norm 
-        innovation_norm = np.linalg.norm(innovation)  # Use Euclidean norm for intuitive threshold
+        # Update adaptive tuner with innovation statistics
+        if self.adaptive_tuner is not None:
+            try:
+                self.adaptive_tuner.update_innovation(
+                    innovation, S, self.current_time, self.tle_data.epoch_datetime
+                )
+            except Exception as e:
+                self.logger.warning(f"Adaptive tuner update failed: {e}")
         
-        # Also calculate normalized innovation (chi-squared) for statistical tests
-        try:
-            normalized_innovation = innovation.T @ np.linalg.inv(S) @ innovation
-            self.logger.debug(f"Normalized innovation (chi-squared): {normalized_innovation:.1f}")
-        except np.linalg.LinAlgError:
-            normalized_innovation = None
-            self.logger.warning("Could not calculate normalized innovation due to singular covariance")
-            
-        self.innovation_history.append(innovation_norm)
-        
-        # Use appropriate threshold for Euclidean norm (meters)
-        if innovation_norm > 100000:  # 100km threshold for divergence detection
-            self.divergence_count += 1
-            self.logger.warning(f"Large innovation detected: {innovation_norm:.2f}")
-            
-            if self.divergence_count > self.max_divergence_count:
-                self._handle_filter_divergence()
-                return
+        # Enhanced divergence detection and recovery
+        if self.divergence_detector is not None:
+            try:
+                # Get current parameter vector
+                param_vector = np.array([self.state[6], self.state[7], self.state[8]])  # Bc, Cr, empirical_accel
+                
+                # Assess divergence
+                divergence_metrics = self.divergence_detector.assess_divergence(
+                    innovation, S, self.P, param_vector, self.current_time
+                )
+                
+                # Log divergence status
+                if divergence_metrics.divergence_level.value != 'healthy':
+                    self.logger.warning(f"Divergence detected: {divergence_metrics.divergence_level.value}, "
+                                      f"innovation={divergence_metrics.innovation_norm:.1f}m, "
+                                      f"confidence={divergence_metrics.confidence_score:.3f}")
+                
+                # Get recovery recommendations
+                recovery_actions = self.divergence_detector.recommend_recovery_actions(
+                    divergence_metrics, self.state, self.P, param_vector
+                )
+                
+                # Execute recovery actions
+                for action in recovery_actions:
+                    self.state, self.P, updated_params = self.divergence_detector.execute_recovery_action(
+                        action, self.state, self.P, param_vector
+                    )
+                    # Update parameter states
+                    self.state[6:9] = updated_params[:3]
+                    
+                    self.logger.info(f"Applied recovery action: {action['action']} - {action.get('reason', '')}")
+                
+            except Exception as e:
+                self.logger.warning(f"Enhanced divergence detection failed: {e}")
+                # Fallback to basic divergence detection
+                innovation_norm = np.linalg.norm(innovation)
+                if innovation_norm > 100000:  # 100km threshold
+                    self.divergence_count += 1
+                    if self.divergence_count > self.max_divergence_count:
+                        self._handle_filter_divergence()
+                        return
         else:
-            self.divergence_count = max(0, self.divergence_count - 1)
+            # Basic divergence detection (legacy)
+            innovation_norm = np.linalg.norm(innovation)
+            self.innovation_history.append(innovation_norm)
+            
+            if innovation_norm > 100000:  # 100km threshold for divergence detection
+                self.divergence_count += 1
+                self.logger.warning(f"Large innovation detected: {innovation_norm:.2f}")
+                
+                if self.divergence_count > self.max_divergence_count:
+                    self._handle_filter_divergence()
+                    return
+            else:
+                self.divergence_count = max(0, self.divergence_count - 1)
         
         # Kalman gain
         try:

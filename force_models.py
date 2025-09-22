@@ -6,6 +6,7 @@ from coordinate_transforms import CoordinateTransforms
 from skyfield.api import load, utc
 from skyfield.framelib import ecliptic_frame
 import math
+from enhanced_srp_model import EnhancedSRPModel
 
 class ForceModels:
     """
@@ -60,7 +61,16 @@ class ForceModels:
         # Only implementing up to 4x4 for computational efficiency in real-time
         self._initialize_geopotential_coefficients()
         
-        self.logger.info("Enhanced force models initialized with JPL ephemeris and improved geopotential")
+        # Initialize enhanced SRP model
+        srp_config = {
+            'precise_eclipse_modeling': True,
+            'use_penumbra_modeling': True,
+            'adaptive_srp_coefficients': True,
+            'attitude_modeling': 'conservative'
+        }
+        self.enhanced_srp = EnhancedSRPModel(srp_config)
+        
+        self.logger.info("Enhanced force models initialized with JPL ephemeris, improved geopotential, and enhanced SRP")
     
     def compute_perturbations(self, position: np.ndarray, velocity: np.ndarray,
                             datetime_utc: datetime, bc: float = None,
@@ -116,6 +126,67 @@ class ForceModels:
             
         except Exception as e:
             self.logger.error(f"Perturbation computation error: {e}")
+        
+        return total_accel
+    
+    def compute_adaptive_perturbations(self, position: np.ndarray, velocity: np.ndarray,
+                                     datetime_utc: datetime, bc: float = None,
+                                     cr_a: float = None, adaptive_atmosphere=None,
+                                     satellite_props=None) -> np.ndarray:
+        """
+        Compute orbital perturbations using adaptive atmospheric model
+        
+        Args:
+            position: Position vector in ECI frame (m)
+            velocity: Velocity vector in ECI frame (m/s)
+            datetime_utc: Current UTC time
+            bc: Ballistic coefficient (m²/kg)
+            cr_a: Solar radiation pressure coefficient * area / mass (m²/kg)
+            adaptive_atmosphere: Adaptive atmospheric model instance
+            satellite_props: Satellite properties from characterizer
+            
+        Returns:
+            Total perturbation acceleration (m/s²)
+        """
+        total_accel = np.zeros(3)
+        
+        try:
+            # J2-J6 zonal harmonics
+            if self.config.get('use_j2_j6', True):
+                accel_harmonics = self._compute_zonal_harmonics(position)
+                total_accel += accel_harmonics
+            
+            # Adaptive atmospheric drag
+            if self.config.get('use_drag', True):
+                accel_drag = self._compute_adaptive_atmospheric_drag(
+                    position, velocity, datetime_utc, bc, 
+                    adaptive_atmosphere, satellite_props
+                )
+                total_accel += accel_drag
+            
+            # Enhanced Solar radiation pressure
+            if self.config.get('use_srp', True):
+                accel_srp = self._compute_enhanced_solar_radiation_pressure(
+                    position, velocity, datetime_utc, satellite_props
+                )
+                total_accel += accel_srp
+            
+            # Enhanced lunisolar gravity perturbations
+            if self.config.get('use_lunisolar', True):
+                accel_lunisolar = self._compute_lunisolar_perturbations(
+                    position, datetime_utc
+                )
+                total_accel += accel_lunisolar
+            
+            # Enhanced geopotential (beyond J2-J6)
+            if self.config.get('use_enhanced_geopotential', True):
+                accel_geopotential = self._compute_enhanced_geopotential(
+                    position, datetime_utc
+                )
+                total_accel += accel_geopotential
+            
+        except Exception as e:
+            self.logger.error(f"Adaptive perturbation computation error: {e}")
         
         return total_accel
     
@@ -284,6 +355,46 @@ class ForceModels:
             self.logger.error(f"Drag computation error: {e}")
             return np.zeros(3)
     
+    def _compute_adaptive_atmospheric_drag(self, position: np.ndarray, velocity: np.ndarray,
+                                         datetime_utc: datetime, bc: float = None,
+                                         adaptive_atmosphere=None, satellite_props=None) -> np.ndarray:
+        """Compute atmospheric drag acceleration using adaptive atmospheric model"""
+        try:
+            # Use adaptive atmospheric model if available
+            if adaptive_atmosphere is not None and satellite_props is not None:
+                rho, rho_uncertainty = adaptive_atmosphere.get_adaptive_density(
+                    satellite_props, position, datetime_utc, uncertainty_bounds=True
+                )
+            else:
+                # Fallback to basic atmospheric model
+                return self._compute_atmospheric_drag(position, velocity, datetime_utc, bc)
+            
+            # Relative velocity (account for Earth rotation)
+            omega_earth = 7.2921159e-5  # rad/s
+            v_rot = np.array([-omega_earth * position[1], 
+                             omega_earth * position[0], 0])
+            v_rel = velocity - v_rot
+            v_rel_mag = np.linalg.norm(v_rel)
+            
+            if v_rel_mag == 0:
+                return np.zeros(3)
+            
+            # Ballistic coefficient (Cd * A / m)
+            if bc is None:
+                bc = self.default_bc
+            
+            # Drag acceleration (specific force)
+            # Using ballistic coefficient: F_drag = -0.5 * rho * Bc * v^2
+            # Since Bc = Cd*A/m, the mass division is already included
+            drag_accel = -0.5 * rho * bc * v_rel_mag * v_rel
+            
+            return drag_accel
+            
+        except Exception as e:
+            self.logger.error(f"Adaptive drag computation error: {e}")
+            # Fallback to basic drag computation
+            return self._compute_atmospheric_drag(position, velocity, datetime_utc, bc)
+    
     def _compute_solar_radiation_pressure(self, position: np.ndarray,
                                         datetime_utc: datetime,
                                         cr_a: float = None) -> np.ndarray:
@@ -336,6 +447,38 @@ class ForceModels:
         except Exception as e:
             self.logger.error(f"SRP computation error: {e}")
             return np.zeros(3)
+    
+    def _compute_enhanced_solar_radiation_pressure(self, position: np.ndarray,
+                                                 velocity: np.ndarray,
+                                                 datetime_utc: datetime,
+                                                 satellite_props) -> np.ndarray:
+        """
+        Compute enhanced solar radiation pressure using the EnhancedSRPModel
+        with adaptive coefficients, precise eclipse modeling, and seasonal variations
+        """
+        try:
+            if satellite_props is None:
+                # Fallback to basic SRP computation
+                self.logger.warning("No satellite properties available, using basic SRP")
+                return self._compute_solar_radiation_pressure(position, datetime_utc)
+            
+            # Use enhanced SRP model
+            srp_accel, diagnostics = self.enhanced_srp.compute_srp_acceleration(
+                satellite_props, position, velocity, datetime_utc
+            )
+            
+            # Log diagnostics for monitoring
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Enhanced SRP: eclipse_factor={diagnostics.get('eclipse_factor', 'N/A'):.3f}, "
+                                f"adaptive_cr={diagnostics.get('adaptive_cr', 'N/A'):.3f}, "
+                                f"magnitude={diagnostics.get('srp_magnitude', 0):.2e} m/s²")
+            
+            return srp_accel
+            
+        except Exception as e:
+            self.logger.error(f"Enhanced SRP computation error: {e}")
+            # Fallback to basic SRP
+            return self._compute_solar_radiation_pressure(position, datetime_utc)
     
     def _get_sun_position(self, datetime_utc: datetime) -> np.ndarray:
         """Get Sun position in ECI frame (simplified)"""
